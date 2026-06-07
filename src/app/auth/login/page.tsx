@@ -1,4 +1,5 @@
 import { GalleryVerticalEnd } from "lucide-react"
+import Image from "next/image"
 
 import { LoginForm } from "@/components/login-form"
 
@@ -20,8 +21,14 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
-      <div className="relative hidden bg-zinc-100 lg:block dark:bg-zinc-800">
-        <div className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale bg-gradient-to-tr from-zinc-200 to-zinc-400 dark:from-zinc-800 dark:to-zinc-900" />
+      <div className="relative hidden lg:block h-full overflow-hidden">
+        <Image
+          src="/banner.png"
+          alt="HL Internal Finance"
+          fill
+          priority
+          className="object-cover"
+        />
       </div>
     </div>
   )
