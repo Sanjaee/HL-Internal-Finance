@@ -7,7 +7,7 @@ export const transactionItemSchema = z.object({
 
 export const transactionSchema = z.object({
   transactionDate: z.date({
-    required_error: "Transaction date is required",
+    message: "Transaction date is required",
   }),
   bonNumber: z.string().min(1, "Bon number is required"),
   customerId: z.string().uuid("Customer must be selected"),

@@ -10,26 +10,24 @@ interface GoogleAuthData {
 
 export async function loginWithGoogle(data: GoogleAuthData) {
   try {
-    const existingUser = await db.query.users.findFirst({
-      where: eq(users.email, data.email),
+    const existingUser = await (db.query as any).users.findFirst({
+      where: eq((users as any).email, data.email),
     });
 
     if (existingUser) {
-      // Check if user previously registered with credentials
       if (existingUser.loginType === "credential") {
         throw new Error(
           "This email is registered using email/password. Please login with your password."
         );
       }
 
-      // Update existing user
       await db
-        .update(users)
+        .update(users as any)
         .set({
           fullName: data.username,
           profilePhoto: data.image,
         })
-        .where(eq(users.email, data.email));
+        .where(eq((users as any).email, data.email));
 
       return {
         id: existingUser.id,
@@ -41,9 +39,8 @@ export async function loginWithGoogle(data: GoogleAuthData) {
       };
     }
 
-    // Create new user
-    const [newUser] = await db
-      .insert(users)
+    const newUsersArray = await db
+      .insert(users as any)
       .values({
         email: data.email,
         fullName: data.username,
@@ -53,6 +50,8 @@ export async function loginWithGoogle(data: GoogleAuthData) {
         loginType: "google",
       })
       .returning();
+
+    const newUser = (newUsersArray as any)[0];
 
     return {
       id: newUser.id,
