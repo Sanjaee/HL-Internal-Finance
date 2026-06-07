@@ -13,13 +13,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import { createTransaction, updateTransaction } from "@/actions/transaction-actions";
 import { toast } from "sonner";
 import { useState, useMemo, useEffect } from "react";
@@ -28,6 +22,7 @@ import { calculateCascadingDiscount } from "@/lib/calculations";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { IconTrash, IconPlus } from "@tabler/icons-react";
 import { Switch } from "@/components/ui/switch";
+import { SelectDialog } from "@/components/ui/select-dialog";
 
 export function TransactionForm({
   customers,
@@ -43,6 +38,8 @@ export function TransactionForm({
   transactionId?: string;
 }) {
   const [isLoading, setIsLoading] = useState(false);
+  const [customerDialogOpen, setCustomerDialogOpen] = useState(false);
+  const [productDialogOpen, setProductDialogOpen] = useState<boolean[]>([]);
   const router = useRouter();
 
   const form = useForm<TransactionFormValues>({
@@ -62,6 +59,16 @@ export function TransactionForm({
     control: form.control,
     name: "items",
   });
+
+  // Sync productDialogOpen length with fields length
+  useEffect(() => {
+    setProductDialogOpen((prev) => {
+      if (prev.length === fields.length) return prev;
+      const next = [...prev];
+      while (next.length < fields.length) next.push(false);
+      return next.slice(0, fields.length);
+    });
+  }, [fields.length]);
 
   const selectedCustomerId = form.watch("customerId");
   const isBonusTransaction = form.watch("isBonusTransaction");
@@ -112,6 +119,36 @@ export function TransactionForm({
     }
   }
 
+  // Build customer options for SelectDialog
+  const customerOptions = customers.map((c) => ({
+    id: c.id,
+    name: c.name,
+    code: c.customerCode,
+  }));
+
+  // Build product options for SelectDialog
+  const productOptions = products.map((p) => ({
+    id: p.id,
+    name: p.name,
+    code: p.productCode,
+  }));
+
+  const openProductDialog = (index: number) => {
+    setProductDialogOpen((prev) => {
+      const next = [...prev];
+      next[index] = true;
+      return next;
+    });
+  };
+
+  const closeProductDialog = (index: number, open: boolean) => {
+    setProductDialogOpen((prev) => {
+      const next = [...prev];
+      next[index] = open;
+      return next;
+    });
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 pb-8">
@@ -160,18 +197,18 @@ export function TransactionForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Customer</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a customer" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {customers.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <SelectDialog
+                      open={customerDialogOpen}
+                      onOpenChange={setCustomerDialogOpen}
+                      options={customerOptions}
+                      selectedValue={field.value}
+                      onSelect={(option) => field.onChange(option.id)}
+                      placeholder="Select a customer"
+                      title="Select Customer"
+                      searchPlaceholder="Search customer name..."
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -270,20 +307,18 @@ export function TransactionForm({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className={index !== 0 ? "sr-only md:not-sr-only" : ""}>Product</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select product" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {products.map((p) => (
-                                <SelectItem key={p.id} value={p.id}>
-                                  {p.productCode} - {p.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <FormControl>
+                            <SelectDialog
+                              open={productDialogOpen[index] ?? false}
+                              onOpenChange={(open) => closeProductDialog(index, open)}
+                              options={productOptions}
+                              selectedValue={field.value}
+                              onSelect={(option) => field.onChange(option.id)}
+                              placeholder="Select a product"
+                              title="Select Product"
+                              searchPlaceholder="Search product name or code..."
+                            />
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}

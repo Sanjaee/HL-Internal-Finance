@@ -205,9 +205,10 @@ export async function getProductTypeRecap(month: number, year: number) {
         const items = itemsMap[tx.id] || [];
         for (const item of items) {
           if (item.productType === "LM" || item.productType === "BR") {
-            typeStats[item.productType].totalOmzet += Number(item.lineOmzet);
-            typeStats[item.productType].totalLaba += Number(item.lineProfit);
-            typeStats[item.productType].itemsSold += Number(item.quantity);
+            const pt = item.productType as "LM" | "BR";
+            typeStats[pt].totalOmzet += Number(item.lineOmzet);
+            typeStats[pt].totalLaba += Number(item.lineProfit);
+            typeStats[pt].itemsSold += Number(item.quantity);
           }
         }
       }
