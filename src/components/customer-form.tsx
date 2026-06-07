@@ -25,7 +25,7 @@ export function CustomerForm({ initialData, onSuccess }: { initialData?: any, on
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<CustomerFormValues>({
-    resolver: zodResolver(customerSchema),
+    resolver: zodResolver(customerSchema) as any,
     defaultValues: {
       name: initialData?.name || "",
       customerCode: initialData?.customerCode || "",

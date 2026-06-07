@@ -42,7 +42,7 @@ export function TransactionForm({
   const router = useRouter();
 
   const form = useForm<TransactionFormValues>({
-    resolver: zodResolver(transactionSchema),
+    resolver: zodResolver(transactionSchema) as any,
     defaultValues: {
       transactionDate: new Date(),
       bonNumber: "",

@@ -28,7 +28,7 @@ export function ProductForm({ initialData, onSuccess }: { initialData?: any, onS
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<ProductFormValues>({
-    resolver: zodResolver(productSchema),
+    resolver: zodResolver(productSchema) as any,
     defaultValues: {
       name: initialData?.name || "",
       productCode: initialData?.productCode || "",
