@@ -26,6 +26,14 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+
 export function ProductTable({
   products,
   onEdit,
@@ -35,7 +43,15 @@ export function ProductTable({
 }) {
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [productToDelete, setProductToDelete] = useState<any>(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const router = useRouter();
+
+  const ITEMS_PER_PAGE = 20;
+  const totalPages = Math.ceil(products.length / ITEMS_PER_PAGE);
+  const currentProducts = products.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   const handleDelete = async () => {
     if (!productToDelete) return;
@@ -54,57 +70,91 @@ export function ProductTable({
   };
 
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Code</TableHead>
-            <TableHead>Name</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Cost Price</TableHead>
-            <TableHead>Base Selling Price</TableHead>
-            <TableHead className="text-right">Action</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {products.length === 0 ? (
+    <div className="space-y-4">
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
             <TableRow>
-              <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
-                No products found. Click "Add Product" to create one.
-              </TableCell>
+              <TableHead>Code</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Cost Price</TableHead>
+              <TableHead>Base Selling Price</TableHead>
+              <TableHead className="text-right">Action</TableHead>
             </TableRow>
-          ) : (
-            products.map((product) => (
-              <TableRow key={product.id}>
-                <TableCell className="font-medium">{product.productCode}</TableCell>
-                <TableCell>{product.name}</TableCell>
-                <TableCell>
-                  <Badge variant={product.productType === "LM" ? "default" : "secondary"}>
-                    {product.productType === "LM" ? "LM" : "BR"}
-                  </Badge>
-                </TableCell>
-                <TableCell>Rp {Number(product.costPrice).toLocaleString("id-ID", { maximumFractionDigits: 0 })}</TableCell>
-                <TableCell>Rp {Number(product.basePrice).toLocaleString("id-ID", { maximumFractionDigits: 0 })}</TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button variant="outline" size="icon" onClick={() => onEdit(product)}>
-                      <IconEdit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="icon"
-                      onClick={() => setProductToDelete(product)}
-                      disabled={isDeleting === product.id}
-                    >
-                      <IconTrash className="h-4 w-4" />
-                    </Button>
-                  </div>
+          </TableHeader>
+          <TableBody>
+            {currentProducts.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+                  No products found. Click "Add Product" to create one.
                 </TableCell>
               </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+            ) : (
+              currentProducts.map((product) => (
+                <TableRow key={product.id}>
+                  <TableCell className="font-medium">{product.productCode}</TableCell>
+                  <TableCell>{product.name}</TableCell>
+                  <TableCell>
+                    <Badge variant={product.productType === "LM" ? "default" : "secondary"}>
+                      {product.productType === "LM" ? "LM" : "BR"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>Rp {Number(product.costPrice).toLocaleString("id-ID", { maximumFractionDigits: 0 })}</TableCell>
+                  <TableCell>Rp {Number(product.basePrice).toLocaleString("id-ID", { maximumFractionDigits: 0 })}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" size="icon" onClick={() => onEdit(product)}>
+                        <IconEdit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        onClick={() => setProductToDelete(product)}
+                        disabled={isDeleting === product.id}
+                      >
+                        <IconTrash className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      {totalPages > 1 && (
+        <Pagination>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setCurrentPage((p) => Math.max(1, p - 1));
+                }}
+                className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+              />
+            </PaginationItem>
+            <PaginationItem>
+              <span className="px-4 text-sm font-medium">
+                Page {currentPage} of {totalPages}
+              </span>
+            </PaginationItem>
+            <PaginationItem>
+              <PaginationNext
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setCurrentPage((p) => Math.min(totalPages, p + 1));
+                }}
+                className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      )}
 
       <AlertDialog open={!!productToDelete} onOpenChange={(open) => !open && setProductToDelete(null)}>
         <AlertDialogContent>

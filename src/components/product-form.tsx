@@ -81,7 +81,7 @@ export function ProductForm({ initialData, onSuccess }: { initialData?: any, onS
               <FormItem>
                 <FormLabel>Product Code</FormLabel>
                 <FormControl>
-                  <Input placeholder="Leave blank to auto-generate" {...field} />
+                  <Input placeholder="Kosongkan jika ingin generate Product Code otomatis" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

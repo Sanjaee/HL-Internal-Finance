@@ -26,6 +26,14 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+
 export function CustomerTable({
   customers,
   onEdit,
@@ -35,7 +43,15 @@ export function CustomerTable({
 }) {
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [customerToDelete, setCustomerToDelete] = useState<any>(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const router = useRouter();
+
+  const ITEMS_PER_PAGE = 20;
+  const totalPages = Math.ceil(customers.length / ITEMS_PER_PAGE);
+  const currentCustomers = customers.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   const handleDelete = async () => {
     if (!customerToDelete) return;
@@ -54,55 +70,89 @@ export function CustomerTable({
   };
 
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Customer Code</TableHead>
-            <TableHead>Name</TableHead>
-            <TableHead>Bonus Threshold</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="text-right">Action</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {customers.length === 0 ? (
+    <div className="space-y-4">
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
             <TableRow>
-              <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
-                No customers found. Click "Add Customer" to create one.
-              </TableCell>
+              <TableHead>Customer Code</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Bonus Threshold</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Action</TableHead>
             </TableRow>
-          ) : (
-            customers.map((customer) => (
-              <TableRow key={customer.id}>
-                <TableCell className="font-medium">{customer.customerCode}</TableCell>
-                <TableCell>{customer.name}</TableCell>
-                <TableCell>Rp {Number(customer.bonusThreshold).toLocaleString("id-ID", { maximumFractionDigits: 0 })}</TableCell>
-                <TableCell>
-                  <Badge variant="outline" className="bg-green-50 text-green-700 hover:bg-green-50">
-                    Active
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button variant="outline" size="icon" onClick={() => onEdit(customer)}>
-                      <IconEdit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="icon"
-                      onClick={() => setCustomerToDelete(customer)}
-                      disabled={isDeleting === customer.id}
-                    >
-                      <IconTrash className="h-4 w-4" />
-                    </Button>
-                  </div>
+          </TableHeader>
+          <TableBody>
+            {currentCustomers.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
+                  No customers found. Click "Add Customer" to create one.
                 </TableCell>
               </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+            ) : (
+              currentCustomers.map((customer) => (
+                <TableRow key={customer.id}>
+                  <TableCell className="font-medium">{customer.customerCode}</TableCell>
+                  <TableCell>{customer.name}</TableCell>
+                  <TableCell>Rp {Number(customer.bonusThreshold).toLocaleString("id-ID", { maximumFractionDigits: 0 })}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="bg-green-50 text-green-700 hover:bg-green-50">
+                      Active
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" size="icon" onClick={() => onEdit(customer)}>
+                        <IconEdit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        onClick={() => setCustomerToDelete(customer)}
+                        disabled={isDeleting === customer.id}
+                      >
+                        <IconTrash className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      {totalPages > 1 && (
+        <Pagination>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setCurrentPage((p) => Math.max(1, p - 1));
+                }}
+                className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+              />
+            </PaginationItem>
+            <PaginationItem>
+              <span className="px-4 text-sm font-medium">
+                Page {currentPage} of {totalPages}
+              </span>
+            </PaginationItem>
+            <PaginationItem>
+              <PaginationNext
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setCurrentPage((p) => Math.min(totalPages, p + 1));
+                }}
+                className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      )}
 
       <AlertDialog open={!!customerToDelete} onOpenChange={(open) => !open && setCustomerToDelete(null)}>
         <AlertDialogContent>

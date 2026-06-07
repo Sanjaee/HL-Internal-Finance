@@ -11,9 +11,11 @@ import { format } from "date-fns";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { IconArrowLeft, IconChecklist } from "@tabler/icons-react";
+import { IconArrowLeft, IconChecklist, IconDownload } from "@tabler/icons-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 export function CustomerDetailClient({ customer }: { customer: any }) {
   const [month, setMonth] = useState((new Date().getMonth() + 1).toString());
@@ -55,6 +57,34 @@ export function CustomerDetailClient({ customer }: { customer: any }) {
   };
 
   const hasUnpaid = report?.transactions.some((t: any) => t.status === "PIUTANG");
+
+  const handleExportPDF = () => {
+    if (!report || report.transactions.length === 0) {
+      toast.error("No transactions to export");
+      return;
+    }
+
+    const doc = new jsPDF();
+    doc.text(`Transaction Report - ${customer.name}`, 14, 15);
+    doc.text(`Month: ${format(new Date(Number(year), Number(month) - 1), "MMMM yyyy")}`, 14, 22);
+
+    const tableData = report.transactions.map((t: any) => [
+      format(new Date(t.transactionDate), "dd MMM yyyy"),
+      t.bonNumber,
+      t.status,
+      `Rp ${Number(t.subtotalOmzet).toLocaleString("id-ID")}`,
+      `Rp ${Number(t.totalAmount).toLocaleString("id-ID")}`
+    ]);
+
+    autoTable(doc, {
+      startY: 30,
+      head: [["Date", "Bon Number", "Status", "Omzet", "Total Tagihan"]],
+      body: tableData,
+      theme: "grid",
+    });
+
+    doc.save(`Transactions_${customer.name}_${month}_${year}.pdf`);
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -102,13 +132,13 @@ export function CustomerDetailClient({ customer }: { customer: any }) {
         <div className="py-12 text-center text-muted-foreground">Loading report...</div>
       ) : (
         <>
-          <div className="grid gap-4 md:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium">Total Piutang</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-destructive">
+                <div className="text-xl font-bold text-destructive">
                   Rp {report.summary.totalPiutang.toLocaleString("id-ID", { maximumFractionDigits: 0 })}
                 </div>
               </CardContent>
@@ -118,17 +148,37 @@ export function CustomerDetailClient({ customer }: { customer: any }) {
                 <CardTitle className="text-sm font-medium">Sudah Dibayar</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-green-600">
+                <div className="text-xl font-bold text-green-600">
                   Rp {report.summary.totalDibayar.toLocaleString("id-ID", { maximumFractionDigits: 0 })}
                 </div>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Omzet Diakui</CardTitle>
+                <CardTitle className="text-sm font-medium">Omzet LM</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
+                <div className="text-xl font-bold text-amber-600">
+                  Rp {report.summary.totalOmzetLM?.toLocaleString("id-ID", { maximumFractionDigits: 0 }) || 0}
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Omzet BR</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-xl font-bold text-blue-600">
+                  Rp {report.summary.totalOmzetBR?.toLocaleString("id-ID", { maximumFractionDigits: 0 }) || 0}
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Omzet Total</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-xl font-bold">
                   Rp {report.summary.totalOmzet.toLocaleString("id-ID", { maximumFractionDigits: 0 })}
                 </div>
               </CardContent>
@@ -138,7 +188,7 @@ export function CustomerDetailClient({ customer }: { customer: any }) {
                 <CardTitle className="text-sm font-medium">Laba HL</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-primary">
+                <div className="text-xl font-bold text-primary">
                   Rp {report.summary.totalLaba.toLocaleString("id-ID", { maximumFractionDigits: 0 })}
                 </div>
               </CardContent>
@@ -148,11 +198,16 @@ export function CustomerDetailClient({ customer }: { customer: any }) {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Transactions in {format(new Date(Number(year), Number(month) - 1), "MMMM yyyy")}</CardTitle>
-              {hasUnpaid && (
-                <Button className="bg-green-600 hover:bg-green-700" onClick={() => setIsSettleModalOpen(true)}>
-                  <IconChecklist className="mr-2 h-4 w-4" /> Sudah Lunas (1 Bulan)
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={handleExportPDF}>
+                  <IconDownload className="mr-2 h-4 w-4" /> Export PDF
                 </Button>
-              )}
+                {hasUnpaid && (
+                  <Button className="bg-green-600 hover:bg-green-700" onClick={() => setIsSettleModalOpen(true)}>
+                    <IconChecklist className="mr-2 h-4 w-4" /> Sudah Lunas (1 Bulan)
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               <Table>

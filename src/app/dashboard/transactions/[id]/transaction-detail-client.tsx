@@ -75,6 +75,11 @@ export function TransactionDetailClient({ tx }: { tx: any }) {
               <IconCheck className="mr-2 h-4 w-4" /> Mark as Lunas
             </Button>
           )}
+          <Link href={`/dashboard/transactions/${tx.id}/edit`}>
+            <Button variant="outline">
+              Edit Bon
+            </Button>
+          </Link>
           <Button variant="destructive" onClick={handleDelete}>
             <IconTrash className="mr-2 h-4 w-4" /> Delete Bon
           </Button>

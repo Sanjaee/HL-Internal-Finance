@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { IconCheck, IconSearch } from "@tabler/icons-react";
@@ -30,6 +31,11 @@ export function PelunasanClient({ customers }: { customers: any[] }) {
   const [selectedBon, setSelectedBon] = useState<any>(null);
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split("T")[0]);
   const [isSettling, setIsSettling] = useState(false);
+
+  // Pagination
+  const [piutangPage, setPiutangPage] = useState(1);
+  const [riwayatPage, setRiwayatPage] = useState(1);
+  const ITEMS_PER_PAGE = 20;
 
   const router = useRouter();
 
@@ -115,9 +121,6 @@ export function PelunasanClient({ customers }: { customers: any[] }) {
               </SelectContent>
             </Select>
           </div>
-          <Button variant="secondary" onClick={fetchData}>
-            <IconSearch className="mr-2 h-4 w-4" /> Filter
-          </Button>
         </CardContent>
       </Card>
 
@@ -158,79 +161,113 @@ export function PelunasanClient({ customers }: { customers: any[] }) {
               </Card>
             </div>
 
-            <Card>
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>No Bon</TableHead>
-                      <TableHead>Tanggal</TableHead>
-                      <TableHead>Customer</TableHead>
-                      <TableHead className="text-right">Omzet</TableHead>
-                      <TableHead className="text-right">Ongkir</TableHead>
-                      <TableHead className="text-right">Total Tagihan</TableHead>
-                      <TableHead className="text-center">Aksi</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {data.piutang.length === 0 ? (
-                      <TableRow><TableCell colSpan={7} className="text-center py-6 text-muted-foreground">Tidak ada piutang aktif.</TableCell></TableRow>
-                    ) : (
-                      data.piutang.map((p: any) => (
-                        <TableRow key={p.id}>
-                          <TableCell className="font-medium">
-                            <Link href={`/dashboard/transactions/${p.id}`} className="hover:underline text-primary">{p.bonNumber}</Link>
-                          </TableCell>
-                          <TableCell>{format(new Date(p.transactionDate), "dd/MM/yy")}</TableCell>
-                          <TableCell>{p.customerName}</TableCell>
-                          <TableCell className="text-right">Rp {Number(p.subtotalOmzet).toLocaleString("id-ID", { maximumFractionDigits: 0 })}</TableCell>
-                          <TableCell className="text-right">Rp {Number(p.shippingCost).toLocaleString("id-ID", { maximumFractionDigits: 0 })}</TableCell>
-                          <TableCell className="text-right font-bold text-destructive">Rp {Number(p.totalAmount).toLocaleString("id-ID", { maximumFractionDigits: 0 })}</TableCell>
-                          <TableCell className="text-center">
-                            <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => openSettleModal(p)}>
-                              <IconCheck className="mr-1 h-4 w-4" /> Lunas
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
+            <div className="space-y-4">
+              <Card>
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>No Bon</TableHead>
+                        <TableHead>Tanggal</TableHead>
+                        <TableHead>Customer</TableHead>
+                        <TableHead className="text-right">Omzet</TableHead>
+                        <TableHead className="text-right">Ongkir</TableHead>
+                        <TableHead className="text-right">Total Tagihan</TableHead>
+                        <TableHead className="text-center">Aksi</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {data.piutang.length === 0 ? (
+                        <TableRow><TableCell colSpan={7} className="text-center py-6 text-muted-foreground">Tidak ada piutang aktif.</TableCell></TableRow>
+                      ) : (
+                        data.piutang.slice((piutangPage - 1) * ITEMS_PER_PAGE, piutangPage * ITEMS_PER_PAGE).map((p: any) => (
+                          <TableRow key={p.id}>
+                            <TableCell className="font-medium">
+                              <Link href={`/dashboard/transactions/${p.id}`} className="hover:underline text-primary">{p.bonNumber}</Link>
+                            </TableCell>
+                            <TableCell>{format(new Date(p.transactionDate), "dd/MM/yy")}</TableCell>
+                            <TableCell>{p.customerName}</TableCell>
+                            <TableCell className="text-right">Rp {Number(p.subtotalOmzet).toLocaleString("id-ID", { maximumFractionDigits: 0 })}</TableCell>
+                            <TableCell className="text-right">Rp {Number(p.shippingCost).toLocaleString("id-ID", { maximumFractionDigits: 0 })}</TableCell>
+                            <TableCell className="text-right font-bold text-destructive">Rp {Number(p.totalAmount).toLocaleString("id-ID", { maximumFractionDigits: 0 })}</TableCell>
+                            <TableCell className="text-center">
+                              <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => openSettleModal(p)}>
+                                <IconCheck className="mr-1 h-4 w-4" /> Lunas
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+              {Math.ceil(data.piutang.length / ITEMS_PER_PAGE) > 1 && (
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); setPiutangPage((p) => Math.max(1, p - 1)); }} className={piutangPage === 1 ? "pointer-events-none opacity-50" : ""} />
+                    </PaginationItem>
+                    <PaginationItem>
+                      <span className="px-4 text-sm font-medium">Page {piutangPage} of {Math.ceil(data.piutang.length / ITEMS_PER_PAGE)}</span>
+                    </PaginationItem>
+                    <PaginationItem>
+                      <PaginationNext href="#" onClick={(e) => { e.preventDefault(); setPiutangPage((p) => Math.min(Math.ceil(data.piutang.length / ITEMS_PER_PAGE), p + 1)); }} className={piutangPage === Math.ceil(data.piutang.length / ITEMS_PER_PAGE) ? "pointer-events-none opacity-50" : ""} />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              )}
+            </div>
           </TabsContent>
 
           <TabsContent value="riwayat" className="mt-6">
-            <Card>
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Tgl Bayar</TableHead>
-                      <TableHead>No Bon</TableHead>
-                      <TableHead>Customer</TableHead>
-                      <TableHead className="text-right">Nilai</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {data.riwayat.length === 0 ? (
-                      <TableRow><TableCell colSpan={4} className="text-center py-6 text-muted-foreground">Belum ada riwayat pelunasan.</TableCell></TableRow>
-                    ) : (
-                      data.riwayat.map((r: any) => (
-                        <TableRow key={r.id}>
-                          <TableCell>{format(new Date(r.paymentDate), "dd MMM yyyy")}</TableCell>
-                          <TableCell className="font-medium">
-                            <Link href={`/dashboard/transactions/${r.id}`} className="hover:underline text-primary">{r.bonNumber}</Link>
-                          </TableCell>
-                          <TableCell>{r.customerName}</TableCell>
-                          <TableCell className="text-right font-bold text-green-600">Rp {Number(r.totalAmount).toLocaleString("id-ID", { maximumFractionDigits: 0 })}</TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
+            <div className="space-y-4">
+              <Card>
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Tgl Bayar</TableHead>
+                        <TableHead>No Bon</TableHead>
+                        <TableHead>Customer</TableHead>
+                        <TableHead className="text-right">Nilai</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {data.riwayat.length === 0 ? (
+                        <TableRow><TableCell colSpan={4} className="text-center py-6 text-muted-foreground">Belum ada riwayat pelunasan.</TableCell></TableRow>
+                      ) : (
+                        data.riwayat.slice((riwayatPage - 1) * ITEMS_PER_PAGE, riwayatPage * ITEMS_PER_PAGE).map((r: any) => (
+                          <TableRow key={r.id}>
+                            <TableCell>{format(new Date(r.paymentDate), "dd MMM yyyy")}</TableCell>
+                            <TableCell className="font-medium">
+                              <Link href={`/dashboard/transactions/${r.id}`} className="hover:underline text-primary">{r.bonNumber}</Link>
+                            </TableCell>
+                            <TableCell>{r.customerName}</TableCell>
+                            <TableCell className="text-right font-bold text-green-600">Rp {Number(r.totalAmount).toLocaleString("id-ID", { maximumFractionDigits: 0 })}</TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+              {Math.ceil(data.riwayat.length / ITEMS_PER_PAGE) > 1 && (
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); setRiwayatPage((p) => Math.max(1, p - 1)); }} className={riwayatPage === 1 ? "pointer-events-none opacity-50" : ""} />
+                    </PaginationItem>
+                    <PaginationItem>
+                      <span className="px-4 text-sm font-medium">Page {riwayatPage} of {Math.ceil(data.riwayat.length / ITEMS_PER_PAGE)}</span>
+                    </PaginationItem>
+                    <PaginationItem>
+                      <PaginationNext href="#" onClick={(e) => { e.preventDefault(); setRiwayatPage((p) => Math.min(Math.ceil(data.riwayat.length / ITEMS_PER_PAGE), p + 1)); }} className={riwayatPage === Math.ceil(data.riwayat.length / ITEMS_PER_PAGE) ? "pointer-events-none opacity-50" : ""} />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              )}
+            </div>
           </TabsContent>
         </Tabs>
       )}

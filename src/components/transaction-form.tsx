@@ -20,9 +20,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { createTransaction } from "@/actions/transaction-actions";
+import { createTransaction, updateTransaction } from "@/actions/transaction-actions";
 import { toast } from "sonner";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { calculateCascadingDiscount } from "@/lib/calculations";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,17 +33,21 @@ export function TransactionForm({
   customers,
   customerDiscounts,
   products,
+  initialData,
+  transactionId,
 }: {
   customers: any[];
   customerDiscounts: Record<string, { LM: number[]; BR: number[] }>;
   products: any[];
+  initialData?: Partial<TransactionFormValues>;
+  transactionId?: string;
 }) {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   const form = useForm<TransactionFormValues>({
     resolver: zodResolver(transactionSchema) as any,
-    defaultValues: {
+    defaultValues: initialData || {
       transactionDate: new Date(),
       bonNumber: "",
       customerId: "",
@@ -92,14 +96,19 @@ export function TransactionForm({
 
   async function onSubmit(data: TransactionFormValues) {
     setIsLoading(true);
-    const res = await createTransaction(data);
+    let res;
+    if (transactionId) {
+      res = await updateTransaction(transactionId, data);
+    } else {
+      res = await createTransaction(data);
+    }
     setIsLoading(false);
 
     if (res?.success) {
-      toast.success("Transaction created successfully!");
+      toast.success(transactionId ? "Transaction updated successfully!" : "Transaction created successfully!");
       router.push("/dashboard/transactions");
     } else {
-      toast.error(res?.error || "Failed to create transaction");
+      toast.error(res?.error || "Failed to save transaction");
     }
   }
 

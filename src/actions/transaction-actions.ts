@@ -55,6 +55,7 @@ export async function getTransactionById(id: string) {
         totalProfit: transactions.totalProfit,
         description: transactions.description,
         isBonusTransaction: transactions.isBonusTransaction,
+        customerId: transactions.customerId,
         customerName: customers.name,
         customerCode: customers.customerCode,
       })
@@ -67,6 +68,7 @@ export async function getTransactionById(id: string) {
     const items = await db
       .select({
         id: transactionItems.id,
+        productId: transactionItems.productId,
         productNameSnapshot: transactionItems.productNameSnapshot,
         productType: transactionItems.productType,
         quantity: transactionItems.quantity,
@@ -292,5 +294,166 @@ export async function deleteTransaction(id: string) {
   } catch (error: any) {
     console.error("Failed to delete transaction:", error);
     return { success: false, error: error.message || "Failed to delete transaction" };
+  }
+}
+
+export async function updateTransaction(id: string, data: TransactionFormValues, userId?: string) {
+  try {
+    const validation = transactionSchema.safeParse(data);
+    if (!validation.success) {
+      return { success: false, error: "Invalid data", details: validation.error.flatten() };
+    }
+
+    const { bonNumber, customerId, transactionDate, items, shippingCost, isBonusTransaction, description } = validation.data;
+
+    // Check unique Bon, exclude current
+    const existingBonList = await db.select({ id: transactions.id }).from(transactions).where(eq(transactions.bonNumber, bonNumber));
+    const duplicate = existingBonList.find((b) => b.id !== id);
+    if (duplicate) {
+      return { success: false, error: `Bon number ${bonNumber} already exists.` };
+    }
+
+    await db.transaction(async (tx) => {
+      const [oldTx] = await tx.select().from(transactions).where(eq(transactions.id, id));
+      if (!oldTx) throw new Error("Transaction not found");
+
+      // 1. Fetch Customer Discount Groups
+      const discountGroups = await tx
+        .select()
+        .from(customerDiscountGroups)
+        .where(eq(customerDiscountGroups.customerId, customerId));
+
+      const groupIds = discountGroups.map((g) => g.id);
+      
+      let discountDetails: any[] = [];
+      if (groupIds.length > 0) {
+        discountDetails = await tx
+          .select()
+          .from(customerDiscountDetails)
+          .where(sql`${customerDiscountDetails.discountGroupId} IN ${groupIds}`)
+          .orderBy(customerDiscountDetails.sequenceNo);
+      }
+
+      const customerDiscounts: Record<string, number[]> = { LM: [], BR: [] };
+      for (const group of discountGroups) {
+        const type = group.productType;
+        const details = discountDetails.filter((d) => d.discountGroupId === group.id);
+        customerDiscounts[type] = details.map((d) => Number(d.discountPercent));
+      }
+
+      // 2. Fetch Products
+      const productIds = items.map((i) => i.productId);
+      const productList = await tx
+        .select()
+        .from(products)
+        .where(sql`${products.id} IN ${productIds}`);
+      const productMap = new Map(productList.map((p) => [p.id, p]));
+
+      // 3. Subtract old omzet if LUNAS
+      if (oldTx.status === "LUNAS" && !oldTx.isBonusTransaction) {
+        await tx.execute(
+          sql`UPDATE ${customers} SET accumulated_bonus_omzet = accumulated_bonus_omzet - ${Number(oldTx.subtotalOmzet)} WHERE id = ${oldTx.customerId}`
+        );
+      }
+
+      // 4. Delete old items & snapshots
+      const oldItems = await tx.select({ id: transactionItems.id }).from(transactionItems).where(eq(transactionItems.transactionId, id));
+      const oldItemIds = oldItems.map(i => i.id);
+      if (oldItemIds.length > 0) {
+        await tx.delete(transactionItemDiscountSnapshots).where(sql`${transactionItemDiscountSnapshots.transactionItemId} IN ${oldItemIds}`);
+      }
+      await tx.delete(transactionItems).where(eq(transactionItems.transactionId, id));
+
+      // 5. Calculate new lines
+      let totalSubtotalOmzet = 0;
+      let totalProfit = 0;
+
+      for (const item of items) {
+        const product = productMap.get(item.productId);
+        if (!product) throw new Error(`Product ${item.productId} not found`);
+
+        const isBonusItem = isBonusTransaction;
+        
+        let lineOmzet = 0;
+        let lineProfit = 0;
+        let discountedPrice = 0;
+        let effDiscount = 0;
+        const base = Number(product.basePrice);
+        const cost = Number(product.costPrice);
+
+        const discountPercents = customerDiscounts[product.productType] || [];
+
+        if (isBonusItem) {
+          discountedPrice = 0;
+          effDiscount = 100;
+          lineOmzet = 0;
+          lineProfit = 0;
+        } else {
+          discountedPrice = calculateCascadingDiscount(base, discountPercents);
+          effDiscount = calculateEffectiveDiscountPercentage(base, discountedPrice);
+          lineOmzet = discountedPrice * item.quantity;
+          lineProfit = (discountedPrice - cost) * item.quantity;
+        }
+
+        totalSubtotalOmzet += lineOmzet;
+        totalProfit += lineProfit;
+
+        const [newItem] = await tx.insert(transactionItems).values({
+          transactionId: id,
+          productId: product.id,
+          productNameSnapshot: product.name,
+          productType: product.productType,
+          quantity: item.quantity,
+          basePrice: String(base),
+          costPrice: String(cost),
+          discountedUnitPrice: String(discountedPrice),
+          discountPercentageEffective: String(effDiscount),
+          lineOmzet: String(lineOmzet),
+          lineProfit: String(lineProfit),
+          isBonusItem,
+        }).returning();
+
+        if (!isBonusItem && discountPercents.length > 0) {
+          await tx.insert(transactionItemDiscountSnapshots).values(
+            discountPercents.map((pct, idx) => ({
+              transactionItemId: newItem.id,
+              sequenceNo: idx + 1,
+              discountPercent: String(pct),
+            }))
+          );
+        }
+      }
+
+      // 6. Update Header
+      const totalAmount = totalSubtotalOmzet + shippingCost;
+      await tx.update(transactions).set({
+        bonNumber,
+        customerId,
+        transactionDate: transactionDate.toISOString().split("T")[0],
+        shippingCost: String(shippingCost),
+        isBonusTransaction,
+        description,
+        subtotalOmzet: String(totalSubtotalOmzet),
+        totalAmount: String(totalAmount),
+        totalProfit: String(totalProfit),
+        updatedBy: userId,
+        updatedAt: new Date(),
+      }).where(eq(transactions.id, id));
+
+      // 7. Add new omzet if LUNAS
+      if (oldTx.status === "LUNAS" && !isBonusTransaction) {
+        await tx.execute(
+          sql`UPDATE ${customers} SET accumulated_bonus_omzet = accumulated_bonus_omzet + ${totalSubtotalOmzet} WHERE id = ${customerId}`
+        );
+      }
+    });
+
+    revalidatePath("/dashboard/transactions");
+    revalidatePath(`/dashboard/transactions/${id}`);
+    revalidatePath("/dashboard/customers");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Failed to update transaction:", error);
+    return { success: false, error: error.message || "Failed to update transaction" };
   }
 }

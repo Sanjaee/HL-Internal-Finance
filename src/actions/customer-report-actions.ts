@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { transactions, customers } from "@/db/schema";
+import { transactions, customers, transactionItems } from "@/db/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
@@ -26,7 +26,19 @@ export async function getCustomerMonthlyReport(customerId: string, month: number
     let totalPiutang = 0;
     let totalDibayar = 0;
     let totalOmzet = 0;
+    let totalOmzetLM = 0;
+    let totalOmzetBR = 0;
     let totalLaba = 0;
+
+    const txIds = txList.map(t => t.id);
+    let itemsMap: Record<string, any[]> = {};
+    if (txIds.length > 0) {
+      const items = await db.select().from(transactionItems).where(sql`${transactionItems.transactionId} IN ${txIds}`);
+      for (const item of items) {
+        if (!itemsMap[item.transactionId]) itemsMap[item.transactionId] = [];
+        itemsMap[item.transactionId].push(item);
+      }
+    }
 
     for (const tx of txList) {
       if (tx.status === "PIUTANG") {
@@ -35,6 +47,15 @@ export async function getCustomerMonthlyReport(customerId: string, month: number
         totalDibayar += Number(tx.totalAmount);
         totalOmzet += Number(tx.subtotalOmzet);
         totalLaba += Number(tx.totalProfit);
+
+        const items = itemsMap[tx.id] || [];
+        for (const item of items) {
+          if (item.productType === "LM") {
+            totalOmzetLM += Number(item.lineOmzet);
+          } else if (item.productType === "BR") {
+            totalOmzetBR += Number(item.lineOmzet);
+          }
+        }
       }
     }
 
@@ -46,6 +67,8 @@ export async function getCustomerMonthlyReport(customerId: string, month: number
           totalPiutang,
           totalDibayar,
           totalOmzet,
+          totalOmzetLM,
+          totalOmzetBR,
           totalLaba,
         }
       }

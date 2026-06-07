@@ -91,7 +91,7 @@ export function CustomerForm({ initialData, onSuccess }: { initialData?: any, on
                 <FormItem>
                   <FormLabel>Customer Code</FormLabel>
                   <FormControl>
-                    <Input placeholder="Leave blank to auto-generate" {...field} />
+                    <Input placeholder="Kosongkan jika ingin generate Customer Code otomatis" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
