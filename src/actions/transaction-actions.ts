@@ -1,0 +1,296 @@
+"use server";
+
+import { db } from "@/db";
+import {
+  transactions,
+  transactionItems,
+  transactionItemDiscountSnapshots,
+  customers,
+  products,
+  customerDiscountGroups,
+  customerDiscountDetails,
+  customerBonusLedgers,
+} from "@/db/schema";
+import { transactionSchema, TransactionFormValues } from "@/schemas/transaction";
+import { eq, desc, sql } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
+import { calculateCascadingDiscount, calculateEffectiveDiscountPercentage } from "@/lib/calculations";
+
+export async function getTransactions() {
+  try {
+    const list = await db
+      .select({
+        id: transactions.id,
+        bonNumber: transactions.bonNumber,
+        transactionDate: transactions.transactionDate,
+        status: transactions.status,
+        subtotalOmzet: transactions.subtotalOmzet,
+        shippingCost: transactions.shippingCost,
+        totalAmount: transactions.totalAmount,
+        customerName: customers.name,
+      })
+      .from(transactions)
+      .leftJoin(customers, eq(transactions.customerId, customers.id))
+      .orderBy(desc(transactions.createdAt));
+
+    return { success: true, data: list };
+  } catch (error: any) {
+    console.error("Failed to fetch transactions:", error);
+    return { success: false, error: error.message || "Failed to fetch transactions" };
+  }
+}
+
+export async function getTransactionById(id: string) {
+  try {
+    const [tx] = await db
+      .select({
+        id: transactions.id,
+        bonNumber: transactions.bonNumber,
+        transactionDate: transactions.transactionDate,
+        paymentDate: transactions.paymentDate,
+        status: transactions.status,
+        subtotalOmzet: transactions.subtotalOmzet,
+        shippingCost: transactions.shippingCost,
+        totalAmount: transactions.totalAmount,
+        totalProfit: transactions.totalProfit,
+        description: transactions.description,
+        isBonusTransaction: transactions.isBonusTransaction,
+        customerName: customers.name,
+        customerCode: customers.customerCode,
+      })
+      .from(transactions)
+      .leftJoin(customers, eq(transactions.customerId, customers.id))
+      .where(eq(transactions.id, id));
+
+    if (!tx) return { success: false, error: "Transaction not found" };
+
+    const items = await db
+      .select({
+        id: transactionItems.id,
+        productNameSnapshot: transactionItems.productNameSnapshot,
+        productType: transactionItems.productType,
+        quantity: transactionItems.quantity,
+        basePrice: transactionItems.basePrice,
+        discountedUnitPrice: transactionItems.discountedUnitPrice,
+        lineOmzet: transactionItems.lineOmzet,
+        lineProfit: transactionItems.lineProfit,
+        isBonusItem: transactionItems.isBonusItem,
+      })
+      .from(transactionItems)
+      .where(eq(transactionItems.transactionId, id));
+
+    return { success: true, data: { ...tx, items } };
+  } catch (error: any) {
+    console.error("Failed to fetch transaction:", error);
+    return { success: false, error: error.message || "Failed to fetch transaction" };
+  }
+}
+
+export async function createTransaction(data: TransactionFormValues, userId?: string) {
+  try {
+    const validation = transactionSchema.safeParse(data);
+    if (!validation.success) {
+      return { success: false, error: "Invalid data", details: validation.error.flatten() };
+    }
+
+    const { bonNumber, customerId, transactionDate, items, shippingCost, isBonusTransaction, description } = validation.data;
+
+    // Check unique Bon
+    const existingBon = await db.select({ id: transactions.id }).from(transactions).where(eq(transactions.bonNumber, bonNumber));
+    if (existingBon.length > 0) {
+      return { success: false, error: `Bon number ${bonNumber} already exists.` };
+    }
+
+    // Process in transaction
+    await db.transaction(async (tx) => {
+      // 1. Fetch Customer Discount Groups
+      const discountGroups = await tx
+        .select()
+        .from(customerDiscountGroups)
+        .where(eq(customerDiscountGroups.customerId, customerId));
+
+      const groupIds = discountGroups.map((g) => g.id);
+      
+      let discountDetails: any[] = [];
+      if (groupIds.length > 0) {
+        discountDetails = await tx
+          .select()
+          .from(customerDiscountDetails)
+          .where(sql`${customerDiscountDetails.discountGroupId} IN ${groupIds}`)
+          .orderBy(customerDiscountDetails.sequenceNo);
+      }
+
+      // Map discounts for easy lookup: { 'LM': [20, 10], 'BR': [5] }
+      const customerDiscounts: Record<string, number[]> = { LM: [], BR: [] };
+      for (const group of discountGroups) {
+        const type = group.productType;
+        const details = discountDetails.filter((d) => d.discountGroupId === group.id);
+        customerDiscounts[type] = details.map((d) => Number(d.discountPercent));
+      }
+
+      // 2. Fetch all required Products
+      const productIds = items.map((i) => i.productId);
+      const productList = await tx
+        .select()
+        .from(products)
+        .where(sql`${products.id} IN ${productIds}`);
+
+      const productMap = new Map(productList.map((p) => [p.id, p]));
+
+      // 3. Prepare data variables
+      let totalSubtotalOmzet = 0;
+      let totalProfit = 0;
+
+      // 4. Insert Transaction Header
+      const [newTx] = await tx.insert(transactions).values({
+        bonNumber,
+        customerId,
+        transactionDate: transactionDate.toISOString().split("T")[0],
+        shippingCost: String(shippingCost),
+        isBonusTransaction,
+        description,
+        status: "PIUTANG", // always starts as PIUTANG
+        // We will update these totals after calculating lines
+        subtotalOmzet: "0",
+        totalAmount: "0",
+        totalProfit: "0",
+        createdBy: userId,
+        updatedBy: userId,
+      }).returning();
+
+      // 5. Process each item
+      for (const item of items) {
+        const product = productMap.get(item.productId);
+        if (!product) throw new Error(`Product ${item.productId} not found`);
+
+        const isBonusItem = isBonusTransaction;
+        
+        let lineOmzet = 0;
+        let lineProfit = 0;
+        let discountedPrice = 0;
+        let effDiscount = 0;
+        const base = Number(product.basePrice);
+        const cost = Number(product.costPrice);
+
+        const discountPercents = customerDiscounts[product.productType] || [];
+
+        if (isBonusItem) {
+          // Bonus item = free
+          discountedPrice = 0;
+          effDiscount = 100;
+          lineOmzet = 0;
+          lineProfit = 0; // Bonus cost doesn't reduce HL profit per rule D5
+        } else {
+          discountedPrice = calculateCascadingDiscount(base, discountPercents);
+          effDiscount = calculateEffectiveDiscountPercentage(base, discountedPrice);
+          lineOmzet = discountedPrice * item.quantity;
+          lineProfit = (discountedPrice - cost) * item.quantity;
+        }
+
+        totalSubtotalOmzet += lineOmzet;
+        totalProfit += lineProfit;
+
+        // Insert Transaction Item
+        const [newItem] = await tx.insert(transactionItems).values({
+          transactionId: newTx.id,
+          productId: product.id,
+          productNameSnapshot: product.name,
+          productType: product.productType,
+          quantity: item.quantity,
+          basePrice: String(base),
+          costPrice: String(cost),
+          discountedUnitPrice: String(discountedPrice),
+          discountPercentageEffective: String(effDiscount),
+          lineOmzet: String(lineOmzet),
+          lineProfit: String(lineProfit),
+          isBonusItem,
+        }).returning();
+
+        // Insert Discount Snapshots
+        if (!isBonusItem && discountPercents.length > 0) {
+          await tx.insert(transactionItemDiscountSnapshots).values(
+            discountPercents.map((pct, idx) => ({
+              transactionItemId: newItem.id,
+              sequenceNo: idx + 1,
+              discountPercent: String(pct),
+            }))
+          );
+        }
+      }
+
+      // 6. Update Transaction Totals
+      const totalAmount = totalSubtotalOmzet + shippingCost;
+      await tx.update(transactions).set({
+        subtotalOmzet: String(totalSubtotalOmzet),
+        totalAmount: String(totalAmount),
+        totalProfit: String(totalProfit),
+      }).where(eq(transactions.id, newTx.id));
+    });
+    revalidatePath("/dashboard/transactions");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Failed to create transaction:", error);
+    return { success: false, error: error.message || "Failed to create transaction" };
+  }
+}
+
+export async function markTransactionLunas(id: string, paymentDate: Date) {
+  try {
+    await db.transaction(async (tx) => {
+      // Get the transaction
+      const [transaction] = await tx.select().from(transactions).where(eq(transactions.id, id));
+      if (!transaction) throw new Error("Transaction not found");
+      if (transaction.status === "LUNAS") throw new Error("Transaction is already paid");
+
+      // Update the transaction
+      await tx.update(transactions).set({
+        status: "LUNAS",
+        paymentDate: paymentDate.toISOString().split("T")[0],
+        updatedAt: new Date(),
+      }).where(eq(transactions.id, id));
+
+      // Record omzet to customer's accumulated omzet if not bonus
+      if (!transaction.isBonusTransaction) {
+        // Increase accumulated bonus omzet
+        await tx.execute(
+          sql`UPDATE ${customers} SET accumulated_bonus_omzet = accumulated_bonus_omzet + ${Number(transaction.subtotalOmzet)} WHERE id = ${transaction.customerId}`
+        );
+      }
+    });
+
+    revalidatePath("/dashboard/transactions");
+    revalidatePath(`/dashboard/transactions/${id}`);
+    revalidatePath("/dashboard/customers");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Failed to mark transaction as LUNAS:", error);
+    return { success: false, error: error.message || "Failed to mark as LUNAS" };
+  }
+}
+
+export async function deleteTransaction(id: string) {
+  try {
+    // Delete in order due to foreign keys, or ideally transaction is just marked deleted,
+    // but schema doesn't have isDeleted on transactions. We will Hard Delete or soft if we add it.
+    // Let's hard delete since it's allowed.
+    await db.transaction(async (tx) => {
+      const items = await tx.select({ id: transactionItems.id }).from(transactionItems).where(eq(transactionItems.transactionId, id));
+      const itemIds = items.map(i => i.id);
+      
+      if (itemIds.length > 0) {
+        await tx.delete(transactionItemDiscountSnapshots).where(sql`${transactionItemDiscountSnapshots.transactionItemId} IN ${itemIds}`);
+      }
+      
+      await tx.delete(transactionItems).where(eq(transactionItems.transactionId, id));
+      await tx.delete(customerBonusLedgers).where(eq(customerBonusLedgers.transactionId, id));
+      // Redemptions not deleted here for simplicity, assuming no redemptions yet if we just created it.
+      await tx.delete(transactions).where(eq(transactions.id, id));
+    });
+
+    revalidatePath("/dashboard/transactions");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Failed to delete transaction:", error);
+    return { success: false, error: error.message || "Failed to delete transaction" };
+  }
+}
