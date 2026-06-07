@@ -33,7 +33,7 @@ export function ReportsClient() {
     ]);
 
     if (overall.success) setOverallData(overall.data);
-    if (cust.success) setCustomerData(cust.data);
+    if (cust.success) setCustomerData(cust.data || []);
     if (prod.success) setProductTypeData(prod.data);
     
     setIsLoading(false);
@@ -110,27 +110,27 @@ export function ReportsClient() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               <Card>
                 <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Total Piutang</CardTitle></CardHeader>
-                <CardContent><div className="text-2xl font-bold text-destructive">Rp {overallData.totalPiutang.toLocaleString("id-ID")}</div></CardContent>
+                <CardContent><div className="text-2xl font-bold text-destructive">Rp {overallData.totalPiutang.toLocaleString("id-ID", { maximumFractionDigits: 0 })}</div></CardContent>
               </Card>
               <Card>
                 <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Total Sudah Dibayar</CardTitle></CardHeader>
-                <CardContent><div className="text-2xl font-bold text-green-600">Rp {overallData.totalDibayar.toLocaleString("id-ID")}</div></CardContent>
+                <CardContent><div className="text-2xl font-bold text-green-600">Rp {overallData.totalDibayar.toLocaleString("id-ID", { maximumFractionDigits: 0 })}</div></CardContent>
               </Card>
               <Card>
                 <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Total Omzet</CardTitle></CardHeader>
-                <CardContent><div className="text-2xl font-bold">Rp {overallData.totalOmzet.toLocaleString("id-ID")}</div></CardContent>
+                <CardContent><div className="text-2xl font-bold">Rp {overallData.totalOmzet.toLocaleString("id-ID", { maximumFractionDigits: 0 })}</div></CardContent>
               </Card>
               <Card>
                 <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Omzet LM</CardTitle></CardHeader>
-                <CardContent><div className="text-2xl font-bold text-amber-600">Rp {overallData.totalOmzetLM.toLocaleString("id-ID")}</div></CardContent>
+                <CardContent><div className="text-2xl font-bold text-amber-600">Rp {overallData.totalOmzetLM.toLocaleString("id-ID", { maximumFractionDigits: 0 })}</div></CardContent>
               </Card>
               <Card>
                 <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Omzet BR</CardTitle></CardHeader>
-                <CardContent><div className="text-2xl font-bold text-blue-600">Rp {overallData.totalOmzetBR.toLocaleString("id-ID")}</div></CardContent>
+                <CardContent><div className="text-2xl font-bold text-blue-600">Rp {overallData.totalOmzetBR.toLocaleString("id-ID", { maximumFractionDigits: 0 })}</div></CardContent>
               </Card>
               <Card className="border-primary/50 bg-primary/5">
                 <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Total Laba HL</CardTitle></CardHeader>
-                <CardContent><div className="text-2xl font-bold text-primary">Rp {overallData.totalLaba.toLocaleString("id-ID")}</div></CardContent>
+                <CardContent><div className="text-2xl font-bold text-primary">Rp {overallData.totalLaba.toLocaleString("id-ID", { maximumFractionDigits: 0 })}</div></CardContent>
               </Card>
             </div>
           )}
@@ -164,12 +164,12 @@ export function ReportsClient() {
                     customerData.map((c) => (
                       <TableRow key={c.customerId}>
                         <TableCell className="font-medium">{c.customerName}</TableCell>
-                        <TableCell className="text-right text-destructive">Rp {c.totalPiutang.toLocaleString("id-ID")}</TableCell>
-                        <TableCell className="text-right">Rp {c.totalDibayar.toLocaleString("id-ID")}</TableCell>
-                        <TableCell className="text-right text-amber-600">Rp {c.totalOmzetLM.toLocaleString("id-ID")}</TableCell>
-                        <TableCell className="text-right text-blue-600">Rp {c.totalOmzetBR.toLocaleString("id-ID")}</TableCell>
-                        <TableCell className="text-right font-bold">Rp {c.totalOmzet.toLocaleString("id-ID")}</TableCell>
-                        <TableCell className="text-right font-bold text-primary">Rp {c.totalLaba.toLocaleString("id-ID")}</TableCell>
+                        <TableCell className="text-right text-destructive">Rp {c.totalPiutang.toLocaleString("id-ID", { maximumFractionDigits: 0 })}</TableCell>
+                        <TableCell className="text-right">Rp {c.totalDibayar.toLocaleString("id-ID", { maximumFractionDigits: 0 })}</TableCell>
+                        <TableCell className="text-right text-amber-600">Rp {c.totalOmzetLM.toLocaleString("id-ID", { maximumFractionDigits: 0 })}</TableCell>
+                        <TableCell className="text-right text-blue-600">Rp {c.totalOmzetBR.toLocaleString("id-ID", { maximumFractionDigits: 0 })}</TableCell>
+                        <TableCell className="text-right font-bold">Rp {c.totalOmzet.toLocaleString("id-ID", { maximumFractionDigits: 0 })}</TableCell>
+                        <TableCell className="text-right font-bold text-primary">Rp {c.totalLaba.toLocaleString("id-ID", { maximumFractionDigits: 0 })}</TableCell>
                       </TableRow>
                     ))
                   )}
@@ -183,7 +183,7 @@ export function ReportsClient() {
           {productTypeData && (
             <div className="grid gap-4 md:grid-cols-2">
               <Card>
-                <CardHeader><CardTitle className="text-amber-600">Logam Mulia (LM)</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="text-amber-600">LM</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex justify-between items-center border-b pb-2">
                     <span className="text-muted-foreground">Items Sold</span>
@@ -191,17 +191,17 @@ export function ReportsClient() {
                   </div>
                   <div className="flex justify-between items-center border-b pb-2">
                     <span className="text-muted-foreground">Total Omzet</span>
-                    <span className="font-bold text-xl">Rp {productTypeData.LM.totalOmzet.toLocaleString("id-ID")}</span>
+                    <span className="font-bold text-xl">Rp {productTypeData.LM.totalOmzet.toLocaleString("id-ID", { maximumFractionDigits: 0 })}</span>
                   </div>
                   <div className="flex justify-between items-center pb-2">
                     <span className="text-muted-foreground">Total Laba</span>
-                    <span className="font-bold text-xl text-primary">Rp {productTypeData.LM.totalLaba.toLocaleString("id-ID")}</span>
+                    <span className="font-bold text-xl text-primary">Rp {productTypeData.LM.totalLaba.toLocaleString("id-ID", { maximumFractionDigits: 0 })}</span>
                   </div>
                 </CardContent>
               </Card>
               
               <Card>
-                <CardHeader><CardTitle className="text-blue-600">Barang Rongsok (BR)</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="text-blue-600">BR</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex justify-between items-center border-b pb-2">
                     <span className="text-muted-foreground">Items Sold</span>
@@ -209,11 +209,11 @@ export function ReportsClient() {
                   </div>
                   <div className="flex justify-between items-center border-b pb-2">
                     <span className="text-muted-foreground">Total Omzet</span>
-                    <span className="font-bold text-xl">Rp {productTypeData.BR.totalOmzet.toLocaleString("id-ID")}</span>
+                    <span className="font-bold text-xl">Rp {productTypeData.BR.totalOmzet.toLocaleString("id-ID", { maximumFractionDigits: 0 })}</span>
                   </div>
                   <div className="flex justify-between items-center pb-2">
                     <span className="text-muted-foreground">Total Laba</span>
-                    <span className="font-bold text-xl text-primary">Rp {productTypeData.BR.totalLaba.toLocaleString("id-ID")}</span>
+                    <span className="font-bold text-xl text-primary">Rp {productTypeData.BR.totalLaba.toLocaleString("id-ID", { maximumFractionDigits: 0 })}</span>
                   </div>
                 </CardContent>
               </Card>
