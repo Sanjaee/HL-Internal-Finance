@@ -40,6 +40,11 @@ const redeemSchema = z.object({
   })).min(1, "Must select at least 1 product"),
 });
 
+type RedeemFormValues = {
+  bonusCountToConsume: number;
+  items: { productId: string; quantity: number }[];
+};
+
 export function BonusRedeemModal({
   customer,
   products,
@@ -53,8 +58,8 @@ export function BonusRedeemModal({
 }) {
   const [isLoading, setIsLoading] = useState(false);
 
-  const form = useForm<z.infer<typeof redeemSchema>>({
-    resolver: zodResolver(redeemSchema),
+  const form = useForm<RedeemFormValues>({
+    resolver: zodResolver(redeemSchema) as any,
     defaultValues: {
       bonusCountToConsume: 1,
       items: [{ productId: "", quantity: 1 }],
@@ -66,7 +71,7 @@ export function BonusRedeemModal({
     name: "items",
   });
 
-  async function onSubmit(data: z.infer<typeof redeemSchema>) {
+  async function onSubmit(data: RedeemFormValues) {
     if (data.bonusCountToConsume > customer.available) {
       form.setError("bonusCountToConsume", { message: "Exceeds available bonus rights" });
       return;
