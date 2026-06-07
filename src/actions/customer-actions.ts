@@ -44,7 +44,7 @@ export async function getCustomerById(id: string) {
     const lmGroup = groups.find(g => g.productType === "LM");
     const brGroup = groups.find(g => g.productType === "BR");
     
-    let discountsLM = [];
+    let discountsLM: (typeof customerDiscountDetails.$inferSelect)[] = [];
     if (lmGroup) {
       discountsLM = await db.select()
         .from(customerDiscountDetails)
@@ -52,7 +52,7 @@ export async function getCustomerById(id: string) {
         .orderBy(customerDiscountDetails.sequenceNo);
     }
     
-    let discountsBR = [];
+    let discountsBR: (typeof customerDiscountDetails.$inferSelect)[] = [];
     if (brGroup) {
       discountsBR = await db.select()
         .from(customerDiscountDetails)
