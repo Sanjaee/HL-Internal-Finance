@@ -78,8 +78,8 @@ export function DashboardCharts({
         <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
           <ChartContainer
             config={{
-              LM: { label: "LM", color: "hsl(var(--chart-1))" },
-              BR: { label: "BR", color: "hsl(var(--chart-2))" },
+              LM: { label: "LM", color: "#2563eb" },
+              BR: { label: "BR", color: "#60a5fa" },
             }}
             className="aspect-auto h-[250px] w-full"
           >
@@ -149,7 +149,7 @@ export function DashboardCharts({
         <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
           <ChartContainer
             config={{
-              total: { label: "Total Omzet", color: "hsl(var(--chart-3))" },
+              total: { label: "Total Omzet", color: "#3b82f6" },
             }}
             className="aspect-auto h-[250px] w-full"
           >
