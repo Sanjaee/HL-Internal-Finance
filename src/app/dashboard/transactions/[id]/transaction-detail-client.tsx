@@ -17,15 +17,46 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { markTransactionLunas, deleteTransaction } from "@/actions/transaction-actions";
+import { markTransactionLunas, deleteTransaction, getEditTransactionFormData } from "@/actions/transaction-actions";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { TransactionForm } from "@/components/transaction-form";
 
 export function TransactionDetailClient({ tx }: { tx: any }) {
   const [isLunasOpen, setIsLunasOpen] = useState(false);
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split("T")[0]);
   const [isLoading, setIsLoading] = useState(false);
+  
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isEditLoading, setIsEditLoading] = useState(false);
+  const [editData, setEditData] = useState<any>(null);
+
   const router = useRouter();
+
+  const handleOpenEdit = async () => {
+    setIsEditOpen(true);
+    if (!editData) {
+      setIsEditLoading(true);
+      const res = await getEditTransactionFormData(tx.id);
+      setIsEditLoading(false);
+      
+      if (res.success && res.data) {
+        const data = res.data;
+        // parse the date string back to Date object without mutating the original inferred type
+        const initialDataWithDate = {
+          ...data.initialData,
+          transactionDate: new Date(data.initialData.transactionDate),
+        };
+        setEditData({
+          ...data,
+          initialData: initialDataWithDate,
+        });
+      } else {
+        toast.error(res.error || "Failed to load edit data");
+        setIsEditOpen(false);
+      }
+    }
+  };
 
   const handleLunas = async () => {
     setIsLoading(true);
@@ -75,11 +106,9 @@ export function TransactionDetailClient({ tx }: { tx: any }) {
               <IconCheck className="mr-2 h-4 w-4" /> Mark as Lunas
             </Button>
           )}
-          <Link href={`/dashboard/transactions/${tx.id}/edit`}>
-            <Button variant="outline">
-              Edit Bon
-            </Button>
-          </Link>
+          <Button variant="outline" onClick={handleOpenEdit} disabled={isEditLoading}>
+            {isEditLoading ? "Loading..." : "Edit Bon"}
+          </Button>
           <Button variant="destructive" onClick={handleDelete}>
             <IconTrash className="mr-2 h-4 w-4" /> Delete Bon
           </Button>
@@ -211,6 +240,36 @@ export function TransactionDetailClient({ tx }: { tx: any }) {
               {isLoading ? "Saving..." : "Confirm Lunas"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Bon: {tx.bonNumber}</DialogTitle>
+            <DialogDescription>
+              Modify the transaction details below.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {isEditLoading ? (
+              <div className="flex justify-center p-8">Loading...</div>
+            ) : editData ? (
+              <TransactionForm
+                customers={editData.customerList}
+                customerDiscounts={editData.customerDiscounts}
+                products={editData.productList}
+                initialData={editData.initialData}
+                transactionId={tx.id}
+                onSuccess={() => {
+                  setIsEditOpen(false);
+                  router.refresh();
+                }}
+                onCancel={() => setIsEditOpen(false)}
+              />
+            ) : (
+              <div className="text-destructive text-center p-4">Failed to load edit form.</div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>

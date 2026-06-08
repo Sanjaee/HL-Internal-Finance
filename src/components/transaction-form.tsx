@@ -30,17 +30,22 @@ export function TransactionForm({
   products,
   initialData,
   transactionId,
+  onSuccess,
+  onCancel,
 }: {
   customers: any[];
   customerDiscounts: Record<string, { LM: number[]; BR: number[] }>;
   products: any[];
   initialData?: Partial<TransactionFormValues>;
   transactionId?: string;
+  onSuccess?: () => void;
+  onCancel?: () => void;
 }) {
   const [isLoading, setIsLoading] = useState(false);
   const [customerDialogOpen, setCustomerDialogOpen] = useState(false);
   const [productDialogOpen, setProductDialogOpen] = useState<boolean[]>([]);
   const router = useRouter();
+
 
   const form = useForm<TransactionFormValues>({
     resolver: zodResolver(transactionSchema) as any,
@@ -113,7 +118,11 @@ export function TransactionForm({
 
     if (res?.success) {
       toast.success(transactionId ? "Transaction updated successfully!" : "Transaction created successfully!");
-      router.push("/dashboard/transactions");
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.push("/dashboard/transactions");
+      }
     } else {
       toast.error(res?.error || "Failed to save transaction");
     }
@@ -391,7 +400,7 @@ export function TransactionForm({
         </Card>
 
         <div className="flex justify-end gap-4">
-          <Button type="button" variant="outline" onClick={() => router.back()}>
+          <Button type="button" variant="outline" onClick={() => onCancel ? onCancel() : router.back()}>
             Cancel
           </Button>
           <Button type="submit" size="lg" disabled={isLoading}>

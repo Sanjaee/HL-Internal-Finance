@@ -457,3 +457,64 @@ export async function updateTransaction(id: string, data: TransactionFormValues,
     return { success: false, error: error.message || "Failed to update transaction" };
   }
 }
+
+export async function getEditTransactionFormData(id: string) {
+  try {
+    const txRes = await getTransactionById(id);
+    if (!txRes.success || !txRes.data) throw new Error("Transaction not found");
+    const txData = txRes.data;
+
+    const customerList = await db.select().from(customers).where(eq(customers.isDeleted, false));
+    if (!customerList.some((c) => c.id === txData.customerId)) {
+      const [missingCustomer] = await db.select().from(customers).where(eq(customers.id, txData.customerId));
+      if (missingCustomer) customerList.push(missingCustomer);
+    }
+    
+    const groups = await db.select().from(customerDiscountGroups);
+    const details = await db.select().from(customerDiscountDetails);
+    
+    const customerDiscounts: Record<string, { LM: number[], BR: number[] }> = {};
+    for (const c of customerList) {
+      customerDiscounts[c.id] = { LM: [], BR: [] };
+    }
+
+    for (const group of groups) {
+      if (!customerDiscounts[group.customerId]) continue;
+      const type = group.productType as "LM" | "BR";
+      const groupDetails = details
+        .filter((d) => d.discountGroupId === group.id)
+        .sort((a, b) => a.sequenceNo - b.sequenceNo)
+        .map((d) => Number(d.discountPercent));
+      
+      customerDiscounts[group.customerId][type] = groupDetails;
+    }
+
+    const productList = await db.select().from(products).where(eq(products.isDeleted, false));
+    const missingProductIds = txData.items
+      .map((i: any) => i.productId)
+      .filter((pid: string) => !productList.some((p) => p.id === pid));
+    
+    for (const pid of missingProductIds) {
+      const [missingProduct] = await db.select().from(products).where(eq(products.id, pid));
+      if (missingProduct) productList.push(missingProduct);
+    }
+
+    const initialData = {
+      transactionDate: txData.transactionDate, // string format, will parse on client
+      bonNumber: txData.bonNumber,
+      customerId: txData.customerId,
+      description: txData.description || "",
+      shippingCost: Number(txData.shippingCost) || 0,
+      isBonusTransaction: txData.isBonusTransaction || false,
+      items: txData.items.map((item: any) => ({
+        productId: item.productId,
+        quantity: item.quantity,
+      })),
+    };
+
+    return { success: true, data: { customerList, customerDiscounts, productList, initialData } };
+  } catch (error: any) {
+    console.error("Failed to fetch edit form data:", error);
+    return { success: false, error: error.message || "Failed to fetch edit form data" };
+  }
+}

@@ -85,44 +85,7 @@ export function PelunasanClient({ customers }: { customers: any[] }) {
         </div>
       </div>
 
-      <Card>
-        <CardContent className="p-4 flex flex-wrap gap-4 items-end">
-          <div className="space-y-1">
-            <label className="text-xs font-medium">Customer</label>
-            <Select value={customerId} onValueChange={setCustomerId}>
-              <SelectTrigger className="w-[200px]"><SelectValue placeholder="All Customers" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">All Customers</SelectItem>
-                {customers.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-medium">Bulan</label>
-            <Select value={month} onValueChange={setMonth}>
-              <SelectTrigger className="w-[120px]"><SelectValue placeholder="All Months" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">All Months</SelectItem>
-                {Array.from({length: 12}).map((_, i) => (
-                  <SelectItem key={i+1} value={(i+1).toString()}>{format(new Date(2000, i, 1), "MMMM")}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-medium">Tahun</label>
-            <Select value={year} onValueChange={setYear}>
-              <SelectTrigger className="w-[120px]"><SelectValue placeholder="All Years" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">All Years</SelectItem>
-                {[2024, 2025, 2026, 2027].map(y => (
-                  <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+   
 
       {!data || isLoading ? (
         <div className="py-12 text-center text-muted-foreground">Loading...</div>

@@ -96,11 +96,11 @@ export function ProductForm({ initialData, onSuccess }: { initialData?: any, onS
                 <FormLabel>Product Type</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                   </FormControl>
-                  <SelectContent>
+                  <SelectContent className="w-full">
                     <SelectItem value="LM">LM</SelectItem>
                     <SelectItem value="BR">BR</SelectItem>
                   </SelectContent>
