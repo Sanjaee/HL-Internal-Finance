@@ -21,13 +21,14 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { CurrencyInput } from "@/components/ui/currency-input";
 import {
   Select,
   SelectContent,
   SelectItem,
-  SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SelectDialog } from "@/components/ui/select-dialog";
 import { redeemBonus } from "@/actions/bonus-actions";
 import { toast } from "sonner";
 import { IconTrash, IconPlus } from "@tabler/icons-react";
@@ -57,6 +58,7 @@ export function BonusRedeemModal({
   onOpenChange: (open: boolean) => void;
 }) {
   const [isLoading, setIsLoading] = useState(false);
+  const [openSelects, setOpenSelects] = useState<Record<number, boolean>>({});
 
   const form = useForm<RedeemFormValues>({
     resolver: zodResolver(redeemSchema) as any,
@@ -118,7 +120,7 @@ export function BonusRedeemModal({
                 <FormItem>
                   <FormLabel>Rights to Consume</FormLabel>
                   <FormControl>
-                    <Input type="number" min="1" max={customer.available} {...field} />
+                    <CurrencyInput {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -142,20 +144,19 @@ export function BonusRedeemModal({
                       render={({ field }) => (
                         <FormItem>
                           {index === 0 && <FormLabel>Product</FormLabel>}
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select product" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {products.map((p) => (
-                                <SelectItem key={p.id} value={p.id}>
-                                  {p.productCode} - {p.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <SelectDialog
+                            open={!!openSelects[index]}
+                            onOpenChange={(isOpen) => setOpenSelects((prev) => ({ ...prev, [index]: isOpen }))}
+                            options={products.map((p) => ({
+                              id: p.id,
+                              name: `${p.productCode} - ${p.name}`,
+                            }))}
+                            selectedValue={field.value}
+                            onSelect={(option) => field.onChange(option.id)}
+                            placeholder="Select product"
+                            title="Select Free Product"
+                            className="w-full"
+                          />
                           <FormMessage />
                         </FormItem>
                       )}
@@ -169,7 +170,7 @@ export function BonusRedeemModal({
                         <FormItem>
                           {index === 0 && <FormLabel>Qty</FormLabel>}
                           <FormControl>
-                            <Input type="number" min="1" {...field} />
+                            <CurrencyInput {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

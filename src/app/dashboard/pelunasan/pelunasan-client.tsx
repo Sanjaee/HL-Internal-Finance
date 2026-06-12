@@ -13,7 +13,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { IconCheck, IconSearch } from "@tabler/icons-react";
+import { IconCheck, IconSearch, IconCalendar } from "@tabler/icons-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -29,8 +32,11 @@ export function PelunasanClient({ customers }: { customers: any[] }) {
   // Modal State
   const [settleModalOpen, setSettleModalOpen] = useState(false);
   const [selectedBon, setSelectedBon] = useState<any>(null);
-  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split("T")[0]);
+  const [paymentDate, setPaymentDate] = useState<Date | undefined>(new Date());
   const [isSettling, setIsSettling] = useState(false);
+
+  // Search
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Pagination
   const [piutangPage, setPiutangPage] = useState(1);
@@ -57,7 +63,7 @@ export function PelunasanClient({ customers }: { customers: any[] }) {
   const handleSettle = async () => {
     if (!selectedBon) return;
     setIsSettling(true);
-    const res = await markTransactionLunas(selectedBon.id, new Date(paymentDate));
+    const res = await markTransactionLunas(selectedBon.id, paymentDate || new Date());
     setIsSettling(false);
 
     if (res?.success) {
@@ -72,9 +78,21 @@ export function PelunasanClient({ customers }: { customers: any[] }) {
 
   const openSettleModal = (bon: any) => {
     setSelectedBon(bon);
-    setPaymentDate(new Date().toISOString().split("T")[0]);
+    setPaymentDate(new Date());
     setSettleModalOpen(true);
   };
+
+  const filteredPiutang = data?.piutang?.filter(
+    (p: any) =>
+      p.bonNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.customerName.toLowerCase().includes(searchQuery.toLowerCase())
+  ) || [];
+
+  const filteredRiwayat = data?.riwayat?.filter(
+    (r: any) =>
+      r.bonNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      r.customerName.toLowerCase().includes(searchQuery.toLowerCase())
+  ) || [];
 
   return (
     <div className="flex flex-col gap-6">
@@ -85,45 +103,63 @@ export function PelunasanClient({ customers }: { customers: any[] }) {
         </div>
       </div>
 
-   
+
 
       {!data || isLoading ? (
         <div className="py-12 text-center text-muted-foreground">Loading...</div>
       ) : (
-        <Tabs defaultValue="piutang">
-          <TabsList className="grid w-full grid-cols-2 max-w-[400px]">
-            <TabsTrigger value="piutang">Piutang Aktif</TabsTrigger>
-            <TabsTrigger value="riwayat">Riwayat Pelunasan</TabsTrigger>
-          </TabsList>
+        <>
+          <div className="grid gap-4 md:grid-cols-4 mb-6">
+            <Card>
+              <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Total Piutang</CardTitle></CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-destructive">
+                  Rp {data.summary.totalPiutang.toLocaleString("id-ID", { maximumFractionDigits: 0 })}
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Bon Belum Lunas</CardTitle></CardHeader>
+              <CardContent><div className="text-2xl font-bold">{data.summary.jumlahBonBelumLunas}</div></CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Customer Menunggak</CardTitle></CardHeader>
+              <CardContent><div className="text-2xl font-bold">{data.summary.totalCustomerMenunggak}</div></CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Pelunasan Bulan Ini</CardTitle></CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">
+                  Rp {data.summary.nilaiPelunasanBulanIni.toLocaleString("id-ID", { maximumFractionDigits: 0 })}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-          <TabsContent value="piutang" className="mt-6 space-y-6">
-            <div className="grid gap-4 md:grid-cols-4">
-              <Card>
-                <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Total Piutang</CardTitle></CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-destructive">
-                    Rp {data.summary.totalPiutang.toLocaleString("id-ID", { maximumFractionDigits: 0 })}
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Bon Belum Lunas</CardTitle></CardHeader>
-                <CardContent><div className="text-2xl font-bold">{data.summary.jumlahBonBelumLunas}</div></CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Customer Menunggak</CardTitle></CardHeader>
-                <CardContent><div className="text-2xl font-bold">{data.summary.totalCustomerMenunggak}</div></CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Pelunasan Bulan Ini</CardTitle></CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-green-600">
-                    Rp {data.summary.nilaiPelunasanBulanIni.toLocaleString("id-ID", { maximumFractionDigits: 0 })}
-                  </div>
-                </CardContent>
-              </Card>
+        <Tabs defaultValue="piutang">
+          <div className="flex flex-col-reverse sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="relative w-full max-w-sm">
+              <IconSearch className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search by Bon Number or Customer..."
+                className="pl-8"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setPiutangPage(1);
+                  setRiwayatPage(1);
+                }}
+              />
             </div>
 
+            <TabsList className="grid w-full grid-cols-2 max-w-[400px]">
+              <TabsTrigger value="piutang">Piutang Aktif</TabsTrigger>
+              <TabsTrigger value="riwayat">Riwayat Pelunasan</TabsTrigger>
+            </TabsList>
+          </div>
+
+          <TabsContent value="piutang" className="mt-6 space-y-6">
             <div className="space-y-4">
               <Card>
                 <CardContent className="p-0">
@@ -140,10 +176,10 @@ export function PelunasanClient({ customers }: { customers: any[] }) {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {data.piutang.length === 0 ? (
+                      {filteredPiutang.length === 0 ? (
                         <TableRow><TableCell colSpan={7} className="text-center py-6 text-muted-foreground">Tidak ada piutang aktif.</TableCell></TableRow>
                       ) : (
-                        data.piutang.slice((piutangPage - 1) * ITEMS_PER_PAGE, piutangPage * ITEMS_PER_PAGE).map((p: any) => (
+                        filteredPiutang.slice((piutangPage - 1) * ITEMS_PER_PAGE, piutangPage * ITEMS_PER_PAGE).map((p: any) => (
                           <TableRow key={p.id}>
                             <TableCell className="font-medium">
                               <Link href={`/dashboard/transactions/${p.id}`} className="hover:underline text-primary">{p.bonNumber}</Link>
@@ -165,17 +201,17 @@ export function PelunasanClient({ customers }: { customers: any[] }) {
                   </Table>
                 </CardContent>
               </Card>
-              {Math.ceil(data.piutang.length / ITEMS_PER_PAGE) > 1 && (
+              {Math.ceil(filteredPiutang.length / ITEMS_PER_PAGE) > 1 && (
                 <Pagination>
                   <PaginationContent>
                     <PaginationItem>
                       <PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); setPiutangPage((p) => Math.max(1, p - 1)); }} className={piutangPage === 1 ? "pointer-events-none opacity-50" : ""} />
                     </PaginationItem>
                     <PaginationItem>
-                      <span className="px-4 text-sm font-medium">Page {piutangPage} of {Math.ceil(data.piutang.length / ITEMS_PER_PAGE)}</span>
+                      <span className="px-4 text-sm font-medium">Page {piutangPage} of {Math.ceil(filteredPiutang.length / ITEMS_PER_PAGE)}</span>
                     </PaginationItem>
                     <PaginationItem>
-                      <PaginationNext href="#" onClick={(e) => { e.preventDefault(); setPiutangPage((p) => Math.min(Math.ceil(data.piutang.length / ITEMS_PER_PAGE), p + 1)); }} className={piutangPage === Math.ceil(data.piutang.length / ITEMS_PER_PAGE) ? "pointer-events-none opacity-50" : ""} />
+                      <PaginationNext href="#" onClick={(e) => { e.preventDefault(); setPiutangPage((p) => Math.min(Math.ceil(filteredPiutang.length / ITEMS_PER_PAGE), p + 1)); }} className={piutangPage === Math.ceil(filteredPiutang.length / ITEMS_PER_PAGE) ? "pointer-events-none opacity-50" : ""} />
                     </PaginationItem>
                   </PaginationContent>
                 </Pagination>
@@ -197,10 +233,10 @@ export function PelunasanClient({ customers }: { customers: any[] }) {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {data.riwayat.length === 0 ? (
+                      {filteredRiwayat.length === 0 ? (
                         <TableRow><TableCell colSpan={4} className="text-center py-6 text-muted-foreground">Belum ada riwayat pelunasan.</TableCell></TableRow>
                       ) : (
-                        data.riwayat.slice((riwayatPage - 1) * ITEMS_PER_PAGE, riwayatPage * ITEMS_PER_PAGE).map((r: any) => (
+                        filteredRiwayat.slice((riwayatPage - 1) * ITEMS_PER_PAGE, riwayatPage * ITEMS_PER_PAGE).map((r: any) => (
                           <TableRow key={r.id}>
                             <TableCell>{format(new Date(r.paymentDate), "dd MMM yyyy")}</TableCell>
                             <TableCell className="font-medium">
@@ -215,17 +251,17 @@ export function PelunasanClient({ customers }: { customers: any[] }) {
                   </Table>
                 </CardContent>
               </Card>
-              {Math.ceil(data.riwayat.length / ITEMS_PER_PAGE) > 1 && (
+              {Math.ceil(filteredRiwayat.length / ITEMS_PER_PAGE) > 1 && (
                 <Pagination>
                   <PaginationContent>
                     <PaginationItem>
                       <PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); setRiwayatPage((p) => Math.max(1, p - 1)); }} className={riwayatPage === 1 ? "pointer-events-none opacity-50" : ""} />
                     </PaginationItem>
                     <PaginationItem>
-                      <span className="px-4 text-sm font-medium">Page {riwayatPage} of {Math.ceil(data.riwayat.length / ITEMS_PER_PAGE)}</span>
+                      <span className="px-4 text-sm font-medium">Page {riwayatPage} of {Math.ceil(filteredRiwayat.length / ITEMS_PER_PAGE)}</span>
                     </PaginationItem>
                     <PaginationItem>
-                      <PaginationNext href="#" onClick={(e) => { e.preventDefault(); setRiwayatPage((p) => Math.min(Math.ceil(data.riwayat.length / ITEMS_PER_PAGE), p + 1)); }} className={riwayatPage === Math.ceil(data.riwayat.length / ITEMS_PER_PAGE) ? "pointer-events-none opacity-50" : ""} />
+                      <PaginationNext href="#" onClick={(e) => { e.preventDefault(); setRiwayatPage((p) => Math.min(Math.ceil(filteredRiwayat.length / ITEMS_PER_PAGE), p + 1)); }} className={riwayatPage === Math.ceil(filteredRiwayat.length / ITEMS_PER_PAGE) ? "pointer-events-none opacity-50" : ""} />
                     </PaginationItem>
                   </PaginationContent>
                 </Pagination>
@@ -233,6 +269,7 @@ export function PelunasanClient({ customers }: { customers: any[] }) {
             </div>
           </TabsContent>
         </Tabs>
+        </>
       )}
 
       {/* Settle Modal */}
@@ -250,9 +287,30 @@ export function PelunasanClient({ customers }: { customers: any[] }) {
                 <div><span className="text-muted-foreground">Customer:</span><br/>{selectedBon.customerName}</div>
                 <div><span className="text-muted-foreground">Total Tagihan:</span><br/><span className="font-bold text-lg">Rp {Number(selectedBon.totalAmount).toLocaleString("id-ID", { maximumFractionDigits: 0 })}</span></div>
               </div>
-              <div>
+              <div className="flex flex-col">
                 <label className="text-sm font-medium mb-1 block">Tanggal Pelunasan *</label>
-                <Input type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !paymentDate && "text-muted-foreground"
+                      )}
+                    >
+                      <IconCalendar className="mr-2 h-4 w-4" />
+                      {paymentDate ? format(paymentDate, "PPP") : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={paymentDate}
+                      onSelect={setPaymentDate}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
           )}

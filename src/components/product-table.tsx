@@ -10,11 +10,12 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { IconEdit, IconTrash } from "@tabler/icons-react";
+import { IconEdit, IconTrash, IconSearch } from "@tabler/icons-react";
 import { deleteProduct } from "@/actions/product-actions";
 import { toast } from "sonner";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Input } from "@/components/ui/input";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,21 +38,35 @@ import {
 export function ProductTable({
   products,
   onEdit,
+  headerActions,
 }: {
   products: any[];
   onEdit: (product: any) => void;
+  headerActions?: React.ReactNode;
 }) {
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [productToDelete, setProductToDelete] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
 
+  const filteredProducts = products.filter(
+    (p) =>
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.productCode.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   const ITEMS_PER_PAGE = 20;
-  const totalPages = Math.ceil(products.length / ITEMS_PER_PAGE);
-  const currentProducts = products.slice(
+  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
+  const currentProducts = filteredProducts.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+    setCurrentPage(1);
+  };
 
   const handleDelete = async () => {
     if (!productToDelete) return;
@@ -71,6 +86,20 @@ export function ProductTable({
 
   return (
     <div className="space-y-4">
+      <div className="flex items-center justify-between gap-4">
+        <div className="relative flex-1 max-w-sm">
+          <IconSearch className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Search products..."
+            className="pl-8"
+            value={searchQuery}
+            onChange={handleSearchChange}
+          />
+        </div>
+        {headerActions && <div>{headerActions}</div>}
+      </div>
+
       <div className="rounded-md border">
         <Table>
           <TableHeader>

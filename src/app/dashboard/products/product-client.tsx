@@ -44,12 +44,17 @@ export function ProductClient({ products }: { products: any[] }) {
             Manage your product catalog and pricing here.
           </p>
         </div>
-        <Button onClick={handleOpenCreate}>
-          <IconPlus className="mr-2 h-4 w-4" /> Add Product
-        </Button>
       </div>
 
-      <ProductTable products={products} onEdit={handleOpenEdit} />
+      <ProductTable 
+        products={products} 
+        onEdit={handleOpenEdit} 
+        headerActions={
+          <Button onClick={handleOpenCreate}>
+            <IconPlus className="mr-2 h-4 w-4" /> Add Product
+          </Button>
+        }
+      />
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-2xl">

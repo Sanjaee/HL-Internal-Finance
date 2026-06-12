@@ -13,6 +13,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { CurrencyInput } from "@/components/ui/currency-input";
 
 import { createTransaction, updateTransaction } from "@/actions/transaction-actions";
 import { toast } from "sonner";
@@ -230,7 +231,7 @@ export function TransactionForm({
                 <FormItem>
                   <FormLabel>Shipping Cost (Ongkir)</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder="0" {...field} />
+                    <CurrencyInput placeholder="0" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -342,7 +343,7 @@ export function TransactionForm({
                         <FormItem>
                           <FormLabel className={index !== 0 ? "sr-only md:not-sr-only" : ""}>Qty</FormLabel>
                           <FormControl>
-                            <Input type="number" min="1" {...field} />
+                            <CurrencyInput {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

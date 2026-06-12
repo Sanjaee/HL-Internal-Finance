@@ -14,6 +14,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { CurrencyInput } from "@/components/ui/currency-input";
 import { createCustomer, updateCustomer } from "@/actions/customer-actions";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -104,7 +105,7 @@ export function CustomerForm({ initialData, onSuccess }: { initialData?: any, on
                 <FormItem className="md:col-span-2">
                   <FormLabel>Bonus Threshold (Rp)</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder="10000000" {...field} />
+                    <CurrencyInput placeholder="10000000" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

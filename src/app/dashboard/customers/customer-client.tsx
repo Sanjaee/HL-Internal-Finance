@@ -45,12 +45,17 @@ export function CustomerClient({ customers }: { customers: any[] }) {
             Manage your customers and their discount groups here.
           </p>
         </div>
-        <Button onClick={handleOpenCreate}>
-          <IconPlus className="mr-2 h-4 w-4" /> Add Customer
-        </Button>
       </div>
 
-      <CustomerTable customers={customers} onEdit={handleOpenEdit} />
+      <CustomerTable 
+        customers={customers} 
+        onEdit={handleOpenEdit} 
+        headerActions={
+          <Button onClick={handleOpenCreate}>
+            <IconPlus className="mr-2 h-4 w-4" /> Add Customer
+          </Button>
+        }
+      />
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-3xl">

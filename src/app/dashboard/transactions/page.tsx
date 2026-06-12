@@ -17,14 +17,18 @@ export default async function TransactionsPage() {
             Manage your sales invoices, shipping costs, and outstanding payments.
           </p>
         </div>
-        <Link href="/dashboard/transactions/create">
-          <Button>
-            <IconPlus className="mr-2 h-4 w-4" /> Create Bon
-          </Button>
-        </Link>
       </div>
 
-      <TransactionTable transactions={transactions} />
+      <TransactionTable 
+        transactions={transactions} 
+        headerActions={
+          <Link href="/dashboard/transactions/create">
+            <Button>
+              <IconPlus className="mr-2 h-4 w-4" /> Create Bon
+            </Button>
+          </Link>
+        }
+      />
     </div>
   );
 }

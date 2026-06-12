@@ -50,12 +50,12 @@ export function ReportsClient() {
     
     const tableData = customerData.map((c: any) => [
       c.customerName,
-      `Rp ${c.totalPiutang.toLocaleString("id-ID")}`,
-      `Rp ${c.totalDibayar.toLocaleString("id-ID")}`,
-      `Rp ${c.totalOmzetLM.toLocaleString("id-ID")}`,
-      `Rp ${c.totalOmzetBR.toLocaleString("id-ID")}`,
-      `Rp ${c.totalOmzet.toLocaleString("id-ID")}`,
-      `Rp ${c.totalLaba.toLocaleString("id-ID")}`
+      `Rp ${c.totalPiutang.toLocaleString("id-ID", { maximumFractionDigits: 0 })}`,
+      `Rp ${c.totalDibayar.toLocaleString("id-ID", { maximumFractionDigits: 0 })}`,
+      `Rp ${c.totalOmzetLM.toLocaleString("id-ID", { maximumFractionDigits: 0 })}`,
+      `Rp ${c.totalOmzetBR.toLocaleString("id-ID", { maximumFractionDigits: 0 })}`,
+      `Rp ${c.totalOmzet.toLocaleString("id-ID", { maximumFractionDigits: 0 })}`,
+      `Rp ${c.totalLaba.toLocaleString("id-ID", { maximumFractionDigits: 0 })}`
     ]);
 
     autoTable(doc, {
@@ -63,6 +63,8 @@ export function ReportsClient() {
       head: [["Customer", "Piutang", "Dibayar", "Omzet LM", "Omzet BR", "Total Omzet", "Laba HL"]],
       body: tableData,
       theme: "grid",
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [15, 23, 42] },
     });
 
     doc.save(`Customer_Recap_${month}_${year}.pdf`);
@@ -70,38 +72,40 @@ export function ReportsClient() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center gap-2">
-        <Select value={month} onValueChange={setMonth}>
-          <SelectTrigger className="w-[150px]">
-            <SelectValue placeholder="Month" />
-          </SelectTrigger>
-          <SelectContent>
-            {Array.from({length: 12}).map((_, i) => (
-              <SelectItem key={i+1} value={(i+1).toString()}>
-                {format(new Date(2000, i, 1), "MMMM")}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select value={year} onValueChange={setYear}>
-          <SelectTrigger className="w-[100px]">
-            <SelectValue placeholder="Year" />
-          </SelectTrigger>
-          <SelectContent>
-            {[2024, 2025, 2026, 2027].map((y) => (
-              <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
       <Tabs defaultValue="overall" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="overall">Overall Recap</TabsTrigger>
-          <TabsTrigger value="customer">Per Customer</TabsTrigger>
-          <TabsTrigger value="product">Per Product Type</TabsTrigger>
-        </TabsList>
+        <div className="flex flex-col-reverse sm:flex-row items-start sm:items-center justify-between gap-4">
+          <TabsList>
+            <TabsTrigger value="overall">Overall Recap</TabsTrigger>
+            <TabsTrigger value="customer">Per Customer</TabsTrigger>
+            <TabsTrigger value="product">Per Product Type</TabsTrigger>
+          </TabsList>
+          
+          <div className="flex items-center gap-2">
+            <Select value={month} onValueChange={setMonth}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="Month" />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({length: 12}).map((_, i) => (
+                  <SelectItem key={i+1} value={(i+1).toString()}>
+                    {format(new Date(2000, i, 1), "MMMM")}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={year} onValueChange={setYear}>
+              <SelectTrigger className="w-[100px]">
+                <SelectValue placeholder="Year" />
+              </SelectTrigger>
+              <SelectContent>
+                {[2024, 2025, 2026, 2027].map((y) => (
+                  <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
         
         <TabsContent value="overall">
           {isLoading || !overallData ? (

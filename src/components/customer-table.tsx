@@ -10,11 +10,12 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { IconEdit, IconTrash } from "@tabler/icons-react";
+import { IconEdit, IconTrash, IconSearch } from "@tabler/icons-react";
 import { deleteCustomer } from "@/actions/customer-actions";
 import { toast } from "sonner";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Input } from "@/components/ui/input";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,21 +38,35 @@ import {
 export function CustomerTable({
   customers,
   onEdit,
+  headerActions,
 }: {
   customers: any[];
   onEdit: (customer: any) => void;
+  headerActions?: React.ReactNode;
 }) {
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [customerToDelete, setCustomerToDelete] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
 
+  const filteredCustomers = customers.filter(
+    (c) =>
+      c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.customerCode.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   const ITEMS_PER_PAGE = 20;
-  const totalPages = Math.ceil(customers.length / ITEMS_PER_PAGE);
-  const currentCustomers = customers.slice(
+  const totalPages = Math.ceil(filteredCustomers.length / ITEMS_PER_PAGE);
+  const currentCustomers = filteredCustomers.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+    setCurrentPage(1);
+  };
 
   const handleDelete = async () => {
     if (!customerToDelete) return;
@@ -71,6 +86,20 @@ export function CustomerTable({
 
   return (
     <div className="space-y-4">
+      <div className="flex items-center justify-between gap-4">
+        <div className="relative flex-1 max-w-sm">
+          <IconSearch className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Search customers..."
+            className="pl-8"
+            value={searchQuery}
+            onChange={handleSearchChange}
+          />
+        </div>
+        {headerActions && <div>{headerActions}</div>}
+      </div>
+
       <div className="rounded-md border">
         <Table>
           <TableHeader>

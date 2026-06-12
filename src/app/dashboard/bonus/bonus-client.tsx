@@ -12,13 +12,19 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
-import { IconGift } from "@tabler/icons-react";
+import { IconGift, IconSearch } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import { BonusRedeemModal } from "./bonus-redeem-modal";
+import { Input } from "@/components/ui/input";
 
 export function BonusClient({ bonusStatus, products }: { bonusStatus: any[], products: any[] }) {
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
+
+  const filteredBonusStatus = bonusStatus.filter((c) =>
+    c.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const handleClose = () => {
     setSelectedCustomer(null);
@@ -36,6 +42,19 @@ export function BonusClient({ bonusStatus, products }: { bonusStatus: any[], pro
         </div>
       </div>
 
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1 max-w-sm">
+          <IconSearch className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Search customer..."
+            className="pl-8"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+      </div>
+
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -49,14 +68,14 @@ export function BonusClient({ bonusStatus, products }: { bonusStatus: any[], pro
             </TableRow>
           </TableHeader>
           <TableBody>
-            {bonusStatus.length === 0 ? (
+            {filteredBonusStatus.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
                   No active customers found.
                 </TableCell>
               </TableRow>
             ) : (
-              bonusStatus.map((c) => (
+              filteredBonusStatus.map((c) => (
                 <TableRow key={c.id}>
                   <TableCell className="font-medium">{c.name}</TableCell>
                   <TableCell>Rp {Number(c.bonusThreshold).toLocaleString("id-ID", { maximumFractionDigits: 0 })}</TableCell>
