@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
-import { IconCheck, IconTrash, IconArrowLeft } from "@tabler/icons-react";
+import { IconCheck, IconTrash, IconArrowLeft, IconCalendar } from "@tabler/icons-react";
 import Link from "next/link";
 import { useState } from "react";
 import {
@@ -21,10 +21,13 @@ import { markTransactionLunas, deleteTransaction, getEditTransactionFormData } f
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { TransactionForm } from "@/components/transaction-form";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 export function TransactionDetailClient({ tx }: { tx: any }) {
   const [isLunasOpen, setIsLunasOpen] = useState(false);
-  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split("T")[0]);
+  const [paymentDate, setPaymentDate] = useState<Date | undefined>(new Date());
   const [isLoading, setIsLoading] = useState(false);
   
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -60,7 +63,7 @@ export function TransactionDetailClient({ tx }: { tx: any }) {
 
   const handleLunas = async () => {
     setIsLoading(true);
-    const res = await markTransactionLunas(tx.id, new Date(paymentDate));
+    const res = await markTransactionLunas(tx.id, paymentDate || new Date());
     setIsLoading(false);
     
     if (res.success) {
@@ -228,11 +231,28 @@ export function TransactionDetailClient({ tx }: { tx: any }) {
           </DialogHeader>
           <div className="py-4">
             <label className="text-sm font-medium mb-2 block">Payment Date</label>
-            <Input 
-              type="date" 
-              value={paymentDate} 
-              onChange={(e) => setPaymentDate(e.target.value)} 
-            />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={"outline"}
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !paymentDate && "text-muted-foreground"
+                  )}
+                >
+                  <IconCalendar className="mr-2 h-4 w-4" />
+                  {paymentDate ? format(paymentDate, "PPP") : <span>Pick a date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={paymentDate}
+                  onSelect={setPaymentDate}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsLunasOpen(false)} disabled={isLoading}>Cancel</Button>

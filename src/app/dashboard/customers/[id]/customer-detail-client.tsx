@@ -11,11 +11,14 @@ import { format } from "date-fns";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { IconArrowLeft, IconChecklist, IconDownload } from "@tabler/icons-react";
+import { IconArrowLeft, IconChecklist, IconDownload, IconCalendar } from "@tabler/icons-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 export function CustomerDetailClient({ customer }: { customer: any }) {
   const [month, setMonth] = useState((new Date().getMonth() + 1).toString());
@@ -24,7 +27,7 @@ export function CustomerDetailClient({ customer }: { customer: any }) {
   const [report, setReport] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSettleModalOpen, setIsSettleModalOpen] = useState(false);
-  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split("T")[0]);
+  const [paymentDate, setPaymentDate] = useState<Date | undefined>(new Date());
   const [isSettling, setIsSettling] = useState(false);
   const router = useRouter();
 
@@ -43,7 +46,7 @@ export function CustomerDetailClient({ customer }: { customer: any }) {
 
   const handleBulkSettle = async () => {
     setIsSettling(true);
-    const res = await bulkSettleMonth(customer.id, Number(month), Number(year), new Date(paymentDate));
+    const res = await bulkSettleMonth(customer.id, Number(month), Number(year), paymentDate || new Date());
     setIsSettling(false);
 
     if (res?.success) {
@@ -263,11 +266,28 @@ export function CustomerDetailClient({ customer }: { customer: any }) {
           </DialogHeader>
           <div className="py-4">
             <label className="text-sm font-medium mb-2 block">Payment Date</label>
-            <Input 
-              type="date" 
-              value={paymentDate} 
-              onChange={(e) => setPaymentDate(e.target.value)} 
-            />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={"outline"}
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !paymentDate && "text-muted-foreground"
+                  )}
+                >
+                  <IconCalendar className="mr-2 h-4 w-4" />
+                  {paymentDate ? format(paymentDate, "PPP") : <span>Pick a date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={paymentDate}
+                  onSelect={setPaymentDate}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsSettleModalOpen(false)} disabled={isSettling}>Cancel</Button>

@@ -13,6 +13,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { CurrencyInput } from "@/components/ui/currency-input";
 import {
   Select,
   SelectContent,
@@ -117,7 +118,7 @@ export function ProductForm({ initialData, onSuccess }: { initialData?: any, onS
               <FormItem>
                 <FormLabel>Cost Price (Rp)</FormLabel>
                 <FormControl>
-                  <Input type="number" placeholder="0" {...field} />
+                  <CurrencyInput placeholder="0" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -131,7 +132,7 @@ export function ProductForm({ initialData, onSuccess }: { initialData?: any, onS
               <FormItem>
                 <FormLabel>Base Selling Price (Rp)</FormLabel>
                 <FormControl>
-                  <Input type="number" placeholder="0" {...field} />
+                  <CurrencyInput placeholder="0" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
