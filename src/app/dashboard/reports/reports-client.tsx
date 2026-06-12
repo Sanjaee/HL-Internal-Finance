@@ -8,13 +8,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { IconDownload } from "@tabler/icons-react";
+import { IconDownload, IconLoader2 } from "@tabler/icons-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 export function ReportsClient() {
+  const currentYear = new Date().getFullYear();
   const [month, setMonth] = useState((new Date().getMonth() + 1).toString());
-  const [year, setYear] = useState(new Date().getFullYear().toString());
+  const [year, setYear] = useState(currentYear.toString());
+
+  const years = Array.from({ length: 11 }, (_, i) => currentYear - 5 + i);
   
   const [overallData, setOverallData] = useState<any>(null);
   const [customerData, setCustomerData] = useState<any[]>([]);
@@ -99,7 +102,7 @@ export function ReportsClient() {
                 <SelectValue placeholder="Year" />
               </SelectTrigger>
               <SelectContent>
-                {[2024, 2025, 2026, 2027].map((y) => (
+                {years.map((y) => (
                   <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
                 ))}
               </SelectContent>
@@ -109,7 +112,10 @@ export function ReportsClient() {
         
         <TabsContent value="overall">
           {isLoading || !overallData ? (
-            <div className="py-12 text-center text-muted-foreground">Loading recap...</div>
+            <div className="py-24 flex flex-col items-center justify-center text-muted-foreground gap-3">
+              <IconLoader2 className="h-8 w-8 animate-spin text-primary" />
+              <span>Loading recap...</span>
+            </div>
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               <Card>

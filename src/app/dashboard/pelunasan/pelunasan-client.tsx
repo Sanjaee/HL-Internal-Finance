@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { IconCheck, IconSearch, IconCalendar } from "@tabler/icons-react";
+import { IconCheck, IconSearch, IconCalendar, IconLoader2 } from "@tabler/icons-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
@@ -106,7 +106,10 @@ export function PelunasanClient({ customers }: { customers: any[] }) {
 
 
       {!data || isLoading ? (
-        <div className="py-12 text-center text-muted-foreground">Loading...</div>
+        <div className="py-24 flex flex-col items-center justify-center text-muted-foreground gap-3">
+          <IconLoader2 className="h-8 w-8 animate-spin text-primary" />
+          <span>Loading...</span>
+        </div>
       ) : (
         <>
           <div className="grid gap-4 md:grid-cols-4">

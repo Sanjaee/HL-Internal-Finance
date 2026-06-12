@@ -11,7 +11,7 @@ import { format } from "date-fns";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { IconArrowLeft, IconChecklist, IconDownload, IconCalendar } from "@tabler/icons-react";
+import { IconArrowLeft, IconChecklist, IconDownload, IconCalendar, IconLoader2 } from "@tabler/icons-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import jsPDF from "jspdf";
@@ -21,8 +21,11 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 
 export function CustomerDetailClient({ customer }: { customer: any }) {
+  const currentYear = new Date().getFullYear();
   const [month, setMonth] = useState((new Date().getMonth() + 1).toString());
-  const [year, setYear] = useState(new Date().getFullYear().toString());
+  const [year, setYear] = useState(currentYear.toString());
+
+  const years = Array.from({ length: 11 }, (_, i) => currentYear - 5 + i);
   
   const [report, setReport] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -123,7 +126,7 @@ export function CustomerDetailClient({ customer }: { customer: any }) {
               <SelectValue placeholder="Year" />
             </SelectTrigger>
             <SelectContent>
-              {[2024, 2025, 2026, 2027].map((y) => (
+              {years.map((y) => (
                 <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
               ))}
             </SelectContent>
@@ -132,7 +135,10 @@ export function CustomerDetailClient({ customer }: { customer: any }) {
       </div>
 
       {!report || isLoading ? (
-        <div className="py-12 text-center text-muted-foreground">Loading report...</div>
+        <div className="py-24 flex flex-col items-center justify-center text-muted-foreground gap-3">
+          <IconLoader2 className="h-8 w-8 animate-spin text-primary" />
+          <span>Loading report...</span>
+        </div>
       ) : (
         <>
           <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">

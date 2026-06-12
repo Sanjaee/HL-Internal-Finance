@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
-import { IconCheck, IconTrash, IconArrowLeft, IconCalendar } from "@tabler/icons-react";
+import { IconCheck, IconTrash, IconArrowLeft, IconCalendar, IconLoader2 } from "@tabler/icons-react";
 import Link from "next/link";
 import { useState } from "react";
 import {
@@ -272,7 +272,10 @@ export function TransactionDetailClient({ tx }: { tx: any }) {
           </DialogHeader>
           <div className="py-4">
             {isEditLoading ? (
-              <div className="flex justify-center p-8">Loading...</div>
+              <div className="flex flex-col items-center justify-center p-12 text-muted-foreground gap-2">
+                <IconLoader2 className="h-8 w-8 animate-spin text-primary" />
+                <span>Loading...</span>
+              </div>
             ) : editData ? (
               <TransactionForm
                 customers={editData.customerList}

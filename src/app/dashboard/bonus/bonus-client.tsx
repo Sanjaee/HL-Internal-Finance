@@ -12,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
+import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { IconGift, IconSearch } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import { BonusRedeemModal } from "./bonus-redeem-modal";
@@ -20,6 +21,8 @@ import { Input } from "@/components/ui/input";
 export function BonusClient({ bonusStatus, products }: { bonusStatus: any[], products: any[] }) {
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const ITEMS_PER_PAGE = 20;
   const router = useRouter();
 
   const filteredBonusStatus = bonusStatus.filter((c) =>
@@ -50,7 +53,10 @@ export function BonusClient({ bonusStatus, products }: { bonusStatus: any[], pro
             placeholder="Search customer..."
             className="pl-8"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setPage(1);
+            }}
           />
         </div>
       </div>
@@ -75,7 +81,7 @@ export function BonusClient({ bonusStatus, products }: { bonusStatus: any[], pro
                 </TableCell>
               </TableRow>
             ) : (
-              filteredBonusStatus.map((c) => (
+              filteredBonusStatus.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE).map((c) => (
                 <TableRow key={c.id}>
                   <TableCell className="font-medium">{c.name}</TableCell>
                   <TableCell>Rp {Number(c.bonusThreshold).toLocaleString("id-ID", { maximumFractionDigits: 0 })}</TableCell>
@@ -111,6 +117,30 @@ export function BonusClient({ bonusStatus, products }: { bonusStatus: any[], pro
           </TableBody>
         </Table>
       </div>
+
+      {Math.ceil(filteredBonusStatus.length / ITEMS_PER_PAGE) > 1 && (
+        <Pagination>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious 
+                href="#" 
+                onClick={(e) => { e.preventDefault(); setPage((p) => Math.max(1, p - 1)); }} 
+                className={page === 1 ? "pointer-events-none opacity-50" : ""} 
+              />
+            </PaginationItem>
+            <PaginationItem>
+              <span className="px-4 text-sm font-medium">Page {page} of {Math.ceil(filteredBonusStatus.length / ITEMS_PER_PAGE)}</span>
+            </PaginationItem>
+            <PaginationItem>
+              <PaginationNext 
+                href="#" 
+                onClick={(e) => { e.preventDefault(); setPage((p) => Math.min(Math.ceil(filteredBonusStatus.length / ITEMS_PER_PAGE), p + 1)); }} 
+                className={page === Math.ceil(filteredBonusStatus.length / ITEMS_PER_PAGE) ? "pointer-events-none opacity-50" : ""} 
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      )}
 
       <BonusRedeemModal
         customer={selectedCustomer}
