@@ -9,7 +9,7 @@ export const transactionSchema = z.object({
   transactionDate: z.date({
     message: "Transaction date is required",
   }),
-  bonNumber: z.string().min(1, "Bon number is required"),
+  bonNumber: z.string().optional().or(z.literal("")),
   customerId: z.string().uuid("Customer must be selected"),
   description: z.string().optional(),
   shippingCost: z.coerce.number().min(0, "Shipping cost cannot be negative").default(0),

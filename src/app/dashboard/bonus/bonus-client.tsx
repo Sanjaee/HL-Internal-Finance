@@ -21,13 +21,15 @@ import { Input } from "@/components/ui/input";
 export function BonusClient({ bonusStatus, products }: { bonusStatus: any[], products: any[] }) {
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [filterMode, setFilterMode] = useState<"all" | "redeem">("all");
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 20;
   const router = useRouter();
 
-  const filteredBonusStatus = bonusStatus.filter((c) =>
-    c.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredBonusStatus = bonusStatus.filter((c) => {
+    if (filterMode === "redeem" && c.available <= 0) return false;
+    return c.name.toLowerCase().includes(searchQuery.toLowerCase());
+  });
 
   const handleClose = () => {
     setSelectedCustomer(null);
@@ -45,7 +47,7 @@ export function BonusClient({ bonusStatus, products }: { bonusStatus: any[], pro
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between gap-4">
         <div className="relative flex-1 max-w-sm">
           <IconSearch className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
@@ -58,6 +60,21 @@ export function BonusClient({ bonusStatus, products }: { bonusStatus: any[], pro
               setPage(1);
             }}
           />
+        </div>
+
+        <div className="flex bg-muted p-1 rounded-md">
+          <button
+            className={`px-3 py-1.5 text-sm font-medium rounded-sm transition-all ${filterMode === "all" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            onClick={() => { setFilterMode("all"); setPage(1); }}
+          >
+            All Customers
+          </button>
+          <button
+            className={`px-3 py-1.5 text-sm font-medium rounded-sm transition-all ${filterMode === "redeem" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            onClick={() => { setFilterMode("redeem"); setPage(1); }}
+          >
+            Ready to Redeem
+          </button>
         </div>
       </div>
 

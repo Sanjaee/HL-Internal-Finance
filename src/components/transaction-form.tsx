@@ -80,36 +80,32 @@ export function TransactionForm({
     });
   }, [fields.length]);
 
-  const selectedCustomerId = form.watch("customerId");
-  const isBonusTransaction = form.watch("isBonusTransaction");
-  const shippingCost = form.watch("shippingCost");
-  const watchedItems = form.watch("items");
+  const watchedValues = form.watch();
+  const selectedCustomerId = watchedValues.customerId;
+  const isBonusTransaction = watchedValues.isBonusTransaction;
+  const shippingCost = watchedValues.shippingCost;
+  const watchedItems = watchedValues.items || [];
 
   // Calculate totals
-  const { subtotalOmzet, totalAmount } = useMemo(() => {
-    let subtotal = 0;
+  let subtotalOmzet = 0;
 
-    watchedItems.forEach((item) => {
-      if (!item.productId || !selectedCustomerId) return;
-      const product = products.find((p) => p.id === item.productId);
-      if (!product) return;
+  watchedItems.forEach((item: any) => {
+    if (!item.productId || !selectedCustomerId) return;
+    const product = products.find((p) => p.id === item.productId);
+    if (!product) return;
 
-      if (isBonusTransaction) {
-        // Bonus items are free
-        return;
-      }
+    if (isBonusTransaction) {
+      // Bonus items are free
+      return;
+    }
 
-      const discounts = customerDiscounts[selectedCustomerId]?.[product.productType as "LM" | "BR"] || [];
-      const discountedPrice = calculateCascadingDiscount(Number(product.basePrice), discounts);
-      
-      subtotal += discountedPrice * (item.quantity || 1);
-    });
+    const discounts = customerDiscounts[selectedCustomerId]?.[product.productType as "LM" | "BR"] || [];
+    const discountedPrice = calculateCascadingDiscount(Number(product.basePrice), discounts);
+    
+    subtotalOmzet += discountedPrice * (item.quantity || 1);
+  });
 
-    return {
-      subtotalOmzet: subtotal,
-      totalAmount: subtotal + (Number(shippingCost) || 0),
-    };
-  }, [watchedItems, selectedCustomerId, products, customerDiscounts, shippingCost, isBonusTransaction]);
+  const totalAmount = subtotalOmzet + (Number(shippingCost) || 0);
 
   async function onSubmit(data: TransactionFormValues) {
     setIsLoading(true);
@@ -126,7 +122,11 @@ export function TransactionForm({
       if (onSuccess) {
         onSuccess();
       } else {
-        router.push("/dashboard/transactions");
+        if (transactionId) {
+          router.push(`/dashboard/transactions/${transactionId}`);
+        } else {
+          router.push("/dashboard/transactions");
+        }
       }
     } else {
       toast.error(res?.error || "Failed to save transaction");
@@ -215,7 +215,7 @@ export function TransactionForm({
                 <FormItem>
                   <FormLabel>Bon Number</FormLabel>
                   <FormControl>
-                    <Input placeholder="INV-2026-001" {...field} />
+                    <Input placeholder="Auto generate code" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

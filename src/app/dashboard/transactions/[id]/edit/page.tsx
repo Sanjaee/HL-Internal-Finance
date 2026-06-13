@@ -5,8 +5,8 @@ import { TransactionForm } from "@/components/transaction-form";
 import { getTransactionById } from "@/actions/transaction-actions";
 import { notFound } from "next/navigation";
 
-export default async function EditTransactionPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default async function EditTransactionPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
 
   // Fetch the existing transaction
   const txRes = await getTransactionById(id);

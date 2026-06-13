@@ -10,6 +10,7 @@ import {
   customerDiscountGroups,
   customerDiscountDetails,
   customerBonusLedgers,
+  bonusRedemptions,
 } from "@/db/schema";
 import { transactionSchema, TransactionFormValues } from "@/schemas/transaction";
 import { eq, desc, sql } from "drizzle-orm";
@@ -95,7 +96,8 @@ export async function createTransaction(data: TransactionFormValues, userId?: st
       return { success: false, error: "Invalid data", details: validation.error.flatten() };
     }
 
-    const { bonNumber, customerId, transactionDate, items, shippingCost, isBonusTransaction, description } = validation.data;
+    const { customerId, transactionDate, items, shippingCost, isBonusTransaction, description } = validation.data;
+    const bonNumber = validation.data.bonNumber || `INV-${Date.now().toString().slice(-6)}`;
 
     // Check unique Bon
     const existingBon = await db.select({ id: transactions.id }).from(transactions).where(eq(transactions.bonNumber, bonNumber));
@@ -285,7 +287,7 @@ export async function deleteTransaction(id: string) {
       
       await tx.delete(transactionItems).where(eq(transactionItems.transactionId, id));
       await tx.delete(customerBonusLedgers).where(eq(customerBonusLedgers.transactionId, id));
-      // Redemptions not deleted here for simplicity, assuming no redemptions yet if we just created it.
+      await tx.delete(bonusRedemptions).where(eq(bonusRedemptions.transactionId, id));
       await tx.delete(transactions).where(eq(transactions.id, id));
     });
 
@@ -304,7 +306,8 @@ export async function updateTransaction(id: string, data: TransactionFormValues,
       return { success: false, error: "Invalid data", details: validation.error.flatten() };
     }
 
-    const { bonNumber, customerId, transactionDate, items, shippingCost, isBonusTransaction, description } = validation.data;
+    const { customerId, transactionDate, items, shippingCost, isBonusTransaction, description } = validation.data;
+    const bonNumber = validation.data.bonNumber || `INV-${Date.now().toString().slice(-6)}`;
 
     // Check unique Bon, exclude current
     const existingBonList = await db.select({ id: transactions.id }).from(transactions).where(eq(transactions.bonNumber, bonNumber));
