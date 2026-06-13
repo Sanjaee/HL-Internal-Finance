@@ -54,7 +54,7 @@ export async function createProduct(data: ProductFormValues) {
       basePrice: String(data.basePrice),
     });
 
-    revalidatePath("/dashboard/products");
+    revalidatePath("/dashboard", "layout");
     return { success: true };
   } catch (error: any) {
     console.error("Failed to create product:", error);
@@ -91,7 +91,7 @@ export async function updateProduct(id: string, data: ProductFormValues) {
       updatedAt: new Date(),
     }).where(eq(products.id, id));
 
-    revalidatePath("/dashboard/products");
+    revalidatePath("/dashboard", "layout");
     return { success: true };
   } catch (error: any) {
     console.error("Failed to update product:", error);
@@ -106,7 +106,7 @@ export async function deleteProduct(id: string) {
       deletedAt: new Date(),
     }).where(eq(products.id, id));
 
-    revalidatePath("/dashboard/products");
+    revalidatePath("/dashboard", "layout");
     return { success: true };
   } catch (error: any) {
     console.error("Failed to delete product:", error);

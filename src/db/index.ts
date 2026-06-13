@@ -6,6 +6,9 @@ import * as schema from "./schema";
 // Create PostgreSQL connection pool
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
+  ...(process.env.NODE_ENV === "production" && {
+    ssl: { rejectUnauthorized: false },
+  }),
 });
 
 // Create Drizzle instance with schema

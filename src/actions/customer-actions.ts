@@ -119,7 +119,7 @@ export async function createCustomer(data: CustomerFormValues) {
       return inserted;
     });
     
-    revalidatePath("/dashboard/customers");
+    revalidatePath("/dashboard", "layout");
     return { success: true, data: newCustomer };
   } catch (error) {
     console.error("Failed to create customer:", error);
@@ -187,7 +187,7 @@ export async function updateCustomer(id: string, data: CustomerFormValues) {
       }
     });
     
-    revalidatePath("/dashboard/customers");
+    revalidatePath("/dashboard", "layout");
     return { success: true };
   } catch (error) {
     console.error("Failed to update customer:", error);
@@ -202,7 +202,7 @@ export async function deleteCustomer(id: string) {
       deletedAt: new Date(),
     }).where(eq(customers.id, id));
     
-    revalidatePath("/dashboard/customers");
+    revalidatePath("/dashboard", "layout");
     return { success: true };
   } catch (error) {
     console.error("Failed to delete customer:", error);
