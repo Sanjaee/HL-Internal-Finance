@@ -1,4 +1,5 @@
 import "dotenv/config";
+import crypto from "crypto";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { eq } from "drizzle-orm";
 import { Pool } from "pg";
@@ -69,79 +70,91 @@ async function main() {
     }
     const insertedProducts = await db.insert(products).values(newProducts).returning();
 
-    // 3. Seed 100 Transactions (1 per day for the last 100 days)
-    console.log("Seeding transactions...");
-    const startDate = subDays(new Date(), 100);
+    // 3. Seed 20,000 Transactions (Over the last 365 days)
+    console.log("Seeding 20,000 transactions...");
+    const TOTAL_TX = 20000;
+    const CHUNK_SIZE = 1000;
+    const startDate = subDays(new Date(), 365);
 
-    for (let i = 0; i < 100; i++) {
-      const transactionDate = addDays(startDate, i);
-      const customer = faker.helpers.arrayElement(insertedCustomers);
+    for (let chunk = 0; chunk < TOTAL_TX / CHUNK_SIZE; chunk++) {
+      console.log(`Processing chunk ${chunk + 1} of ${TOTAL_TX / CHUNK_SIZE}...`);
+      
+      const txBatch = [];
+      const txItemBatches = [];
 
-      // Create transaction
-      const [insertedTx] = await db.insert(transactions).values({
-        bonNumber: `BON-${faker.string.numeric(8)}`,
-        customerId: customer.id,
-        transactionDate: transactionDate.toISOString().split("T")[0],
-        paymentDate: faker.datatype.boolean() ? addDays(transactionDate, faker.number.int({ min: 1, max: 5 })).toISOString().split("T")[0] : null,
-        description: faker.lorem.sentence(),
-        shippingCost: faker.number.float({ min: 0, max: 50000, fractionDigits: 2 }).toString(),
-        status: faker.helpers.arrayElement(["PIUTANG", "LUNAS"]),
-        subtotalOmzet: "0",
-        totalAmount: "0",
-        totalProfit: "0",
-        createdBy: userId,
-        updatedBy: userId,
-        createdAt: transactionDate,
-        updatedAt: transactionDate,
-      }).returning();
+      for (let i = 0; i < CHUNK_SIZE; i++) {
+        const transactionDate = addDays(startDate, faker.number.int({ min: 0, max: 365 }));
+        const customer = faker.helpers.arrayElement(insertedCustomers);
 
-      // Create 1-5 transaction items
-      const numItems = faker.number.int({ min: 1, max: 5 });
-      let subtotalOmzet = 0;
-      let totalProfit = 0;
+        // Pre-generate UUID to link items directly
+        const txId = crypto.randomUUID();
 
-      for (let j = 0; j < numItems; j++) {
-        const product = faker.helpers.arrayElement(insertedProducts);
-        const quantity = faker.number.int({ min: 1, max: 10 });
-        const discountPercentage = faker.number.float({ min: 0, max: 10, fractionDigits: 2 });
+        // Create 1-5 transaction items
+        const numItems = faker.number.int({ min: 1, max: 5 });
+        let subtotalOmzet = 0;
+        let totalProfit = 0;
         
-        const basePrice = parseFloat(product.basePrice as string);
-        const costPrice = parseFloat(product.costPrice as string);
-        const discountedUnitPrice = basePrice * (1 - discountPercentage / 100);
-        const lineOmzet = discountedUnitPrice * quantity;
-        const lineProfit = (discountedUnitPrice - costPrice) * quantity;
+        for (let j = 0; j < numItems; j++) {
+          const product = faker.helpers.arrayElement(insertedProducts);
+          const quantity = faker.number.int({ min: 1, max: 10 });
+          const discountPercentage = faker.number.float({ min: 0, max: 10, fractionDigits: 2 });
+          
+          const basePrice = parseFloat(product.basePrice as string);
+          const costPrice = parseFloat(product.costPrice as string);
+          const discountedUnitPrice = basePrice * (1 - discountPercentage / 100);
+          const lineOmzet = discountedUnitPrice * quantity;
+          const lineProfit = (discountedUnitPrice - costPrice) * quantity;
 
-        subtotalOmzet += lineOmzet;
-        totalProfit += lineProfit;
+          subtotalOmzet += lineOmzet;
+          totalProfit += lineProfit;
 
-        await db.insert(transactionItems).values({
-          transactionId: insertedTx.id,
-          productId: product.id,
-          productNameSnapshot: product.name,
-          productType: product.productType,
-          quantity,
-          basePrice: basePrice.toString(),
-          costPrice: costPrice.toString(),
-          discountPercentageEffective: discountPercentage.toString(),
-          discountedUnitPrice: discountedUnitPrice.toString(),
-          lineOmzet: lineOmzet.toString(),
-          lineProfit: lineProfit.toString(),
-          createdAt: transactionDate,
-        });
-      }
+          txItemBatches.push({
+            transactionId: txId,
+            productId: product.id,
+            productNameSnapshot: product.name,
+            productType: product.productType,
+            quantity,
+            basePrice: basePrice.toString(),
+            costPrice: costPrice.toString(),
+            discountPercentageEffective: discountPercentage.toString(),
+            discountedUnitPrice: discountedUnitPrice.toString(),
+            lineOmzet: lineOmzet.toString(),
+            lineProfit: lineProfit.toString(),
+            createdAt: transactionDate,
+          });
+        }
 
-      // Update transaction totals
-      const shippingCost = parseFloat(insertedTx.shippingCost as string);
-      const totalAmount = subtotalOmzet + shippingCost;
+        const shippingCost = faker.number.float({ min: 0, max: 50000, fractionDigits: 2 });
+        const totalAmount = subtotalOmzet + shippingCost;
 
-      await db.update(transactions)
-        .set({
+        txBatch.push({
+          id: txId,
+          bonNumber: `BON-${faker.string.alphanumeric(4).toUpperCase()}-${chunk}${i}`,
+          customerId: customer.id,
+          transactionDate: transactionDate.toISOString().split("T")[0],
+          paymentDate: faker.datatype.boolean() ? addDays(transactionDate, faker.number.int({ min: 1, max: 5 })).toISOString().split("T")[0] : null,
+          description: faker.lorem.sentence(),
+          shippingCost: shippingCost.toString(),
+          status: faker.helpers.arrayElement(["PIUTANG", "LUNAS"]),
           subtotalOmzet: subtotalOmzet.toString(),
           totalAmount: totalAmount.toString(),
           totalProfit: totalProfit.toString(),
-        })
-        .where(eq(transactions.id, insertedTx.id))
-        .execute();
+          createdBy: userId,
+          updatedBy: userId,
+          createdAt: transactionDate,
+          updatedAt: transactionDate,
+        });
+      }
+
+      // Insert transactions
+      await db.insert(transactions).values(txBatch);
+      
+      // Insert items in smaller chunks to avoid Postgres parameter limits (65535 params)
+      const ITEM_CHUNK = 2000;
+      for (let j = 0; j < txItemBatches.length; j += ITEM_CHUNK) {
+        const batch = txItemBatches.slice(j, j + ITEM_CHUNK);
+        await db.insert(transactionItems).values(batch);
+      }
     }
 
     console.log("Seed dummy data completed successfully!");
