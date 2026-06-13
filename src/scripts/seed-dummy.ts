@@ -3,15 +3,7 @@ import crypto from "crypto";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { eq } from "drizzle-orm";
 import { Pool } from "pg";
-import {
-  customers,
-  products,
-  transactions,
-  transactionItems,
-  customerDiscountGroups,
-  customerDiscountDetails,
-  users,
-} from "../db/schema";
+import * as schema from "../db/schema";
 import { addDays, subDays } from "date-fns";
 import { faker } from "@faker-js/faker";
 
@@ -26,18 +18,31 @@ async function main() {
 
   try {
     // Check if an admin user exists, if not, wait for seed-admin or pick any user
-    const existingUsers = await db.select().from(users).limit(1);
+    const existingUsers = await db.select().from(schema.users).limit(1);
     let userId = existingUsers[0]?.id;
 
     if (!userId) {
         console.log("No user found, you should run seed-admin.ts first, but I will try to proceed without createdBy if possible or create a dummy user.");
     }
 
-    // 1. Seed 20,000 Customers
-    console.log("Seeding 20,000 customers...");
+    console.log("Cleaning up old data...");
+    await db.delete(schema.bonusRedemptions);
+    await db.delete(schema.customerBonusLedgers);
+    await db.delete(schema.transactionItemDiscountSnapshots);
+    await db.delete(schema.transactionItems);
+    await db.delete(schema.transactions);
+    await db.delete(schema.customerDiscountDetails);
+    await db.delete(schema.customerDiscountGroups);
+    await db.delete(schema.products);
+    await db.delete(schema.customers);
+
+
+
+    // 1. Seed 10,000 Customers
+    console.log("Seeding 10,000 customers...");
     const insertedCustomers = [];
-    for (let chunk = 0; chunk < 20; chunk++) {
-      console.log(`Processing customers chunk ${chunk + 1} of 20...`);
+    for (let chunk = 0; chunk < 10; chunk++) {
+      console.log(`Processing customers chunk ${chunk + 1} of 10...`);
       const newCustomers = [];
       for (let i = 0; i < 1000; i++) {
         newCustomers.push({
@@ -50,15 +55,15 @@ async function main() {
           updatedAt: new Date(),
         });
       }
-      const insertedChunk = await db.insert(customers).values(newCustomers).returning();
+      const insertedChunk = await db.insert(schema.customers).values(newCustomers).returning();
       insertedCustomers.push(...insertedChunk);
     }
 
-    // 2. Seed 20,000 Products
-    console.log("Seeding 20,000 products...");
+    // 2. Seed 10,000 Products
+    console.log("Seeding 10,000 products...");
     const insertedProducts = [];
-    for (let chunk = 0; chunk < 20; chunk++) {
-      console.log(`Processing products chunk ${chunk + 1} of 20...`);
+    for (let chunk = 0; chunk < 10; chunk++) {
+      console.log(`Processing products chunk ${chunk + 1} of 10...`);
       const newProducts = [];
       for (let i = 0; i < 1000; i++) {
         const isLM = faker.datatype.boolean();
@@ -76,13 +81,13 @@ async function main() {
           updatedAt: new Date(),
         });
       }
-      const insertedChunk = await db.insert(products).values(newProducts).returning();
+      const insertedChunk = await db.insert(schema.products).values(newProducts).returning();
       insertedProducts.push(...insertedChunk);
     }
 
-    // 3. Seed 20,000 Transactions (Over the last 365 days)
-    console.log("Seeding 20,000 transactions...");
-    const TOTAL_TX = 20000;
+    // 3. Seed 10,000 Transactions (Over the last 365 days)
+    console.log("Seeding 10,000 transactions...");
+    const TOTAL_TX = 10000;
     const CHUNK_SIZE = 1000;
     const startDate = subDays(new Date(), 365);
 
@@ -157,13 +162,13 @@ async function main() {
       }
 
       // Insert transactions
-      await db.insert(transactions).values(txBatch);
+      await db.insert(schema.transactions).values(txBatch);
       
       // Insert items in smaller chunks to avoid Postgres parameter limits (65535 params)
       const ITEM_CHUNK = 2000;
       for (let j = 0; j < txItemBatches.length; j += ITEM_CHUNK) {
         const batch = txItemBatches.slice(j, j + ITEM_CHUNK);
-        await db.insert(transactionItems).values(batch);
+        await db.insert(schema.transactionItems).values(batch);
       }
     }
 
