@@ -38,11 +38,11 @@ async function main() {
 
 
 
-    // 1. Seed 5,000 Customers
-    console.log("Seeding 5,000 customers...");
+    // 1. Seed 1,000 Customers
+    console.log("Seeding 1,000 customers...");
     const insertedCustomers = [];
-    for (let chunk = 0; chunk < 5; chunk++) {
-      console.log(`Processing customers chunk ${chunk + 1} of 5...`);
+    for (let chunk = 0; chunk < 1; chunk++) {
+      console.log(`Processing customers chunk ${chunk + 1} of 1...`);
       const newCustomers = [];
       for (let i = 0; i < 1000; i++) {
         newCustomers.push({
@@ -59,11 +59,11 @@ async function main() {
       insertedCustomers.push(...insertedChunk);
     }
 
-    // 2. Seed 5,000 Products
-    console.log("Seeding 5,000 products...");
+    // 2. Seed 1,000 Products
+    console.log("Seeding 1,000 products...");
     const insertedProducts = [];
-    for (let chunk = 0; chunk < 5; chunk++) {
-      console.log(`Processing products chunk ${chunk + 1} of 5...`);
+    for (let chunk = 0; chunk < 1; chunk++) {
+      console.log(`Processing products chunk ${chunk + 1} of 1...`);
       const newProducts = [];
       for (let i = 0; i < 1000; i++) {
         const isLM = faker.datatype.boolean();
@@ -85,9 +85,9 @@ async function main() {
       insertedProducts.push(...insertedChunk);
     }
 
-    // 3. Seed 5,000 Transactions (Over the last 365 days)
-    console.log("Seeding 5,000 transactions...");
-    const TOTAL_TX = 5000;
+    // 3. Seed 1,000 Transactions (Over the last 365 days)
+    console.log("Seeding 1,000 transactions...");
+    const TOTAL_TX = 1000;
     const CHUNK_SIZE = 1000;
     const startDate = subDays(new Date(), 365);
 
