@@ -19,6 +19,7 @@ import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { DataTable } from "@/components/ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function PelunasanClient({ customers }: { customers: any[] }) {
   // Filters
@@ -175,9 +176,26 @@ export function PelunasanClient({ customers }: { customers: any[] }) {
       </div>
 
       {isLoading || !data ? (
-        <div className="py-24 flex flex-col items-center justify-center text-muted-foreground gap-3">
-          <IconLoader2 className="h-8 w-8 animate-spin text-primary" />
-          <span>Loading...</span>
+        <div className="space-y-6">
+          <div className="grid gap-4 md:grid-cols-4">
+            <Skeleton className="h-[120px] w-full" />
+            <Skeleton className="h-[120px] w-full" />
+            <Skeleton className="h-[120px] w-full" />
+            <Skeleton className="h-[120px] w-full" />
+          </div>
+          <div className="rounded-md border p-4 space-y-4">
+            <div className="flex justify-between">
+              <Skeleton className="h-10 w-[300px]" />
+              <Skeleton className="h-10 w-[200px]" />
+            </div>
+            <div className="space-y-2">
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+            </div>
+          </div>
         </div>
       ) : (
         <>

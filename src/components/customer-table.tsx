@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useDeferredValue } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,18 +22,28 @@ import {
 import { DataTable } from "@/components/ui/data-table";
 import { useQuery } from "@tanstack/react-query";
 
+export interface Customer {
+  id: string;
+  customerCode: string;
+  name: string;
+  bonusThreshold: number;
+  status?: string;
+  [key: string]: any;
+}
+
 export function CustomerTable({
   customers: initialCustomers,
   onEdit,
   headerActions,
 }: {
-  customers: any[];
-  onEdit: (customer: any) => void;
+  customers: Customer[];
+  onEdit: (customer: Customer) => void;
   headerActions?: React.ReactNode;
 }) {
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
-  const [customerToDelete, setCustomerToDelete] = useState<any>(null);
+  const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const deferredSearch = useDeferredValue(searchQuery);
   const router = useRouter();
 
   const { data: customers, refetch } = useQuery({
@@ -43,12 +53,14 @@ export function CustomerTable({
   });
 
   const filteredCustomers = useMemo(() => {
+    const search = deferredSearch.toLowerCase();
+    if (!search) return customers;
     return customers.filter(
       (c) =>
-        c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.customerCode.toLowerCase().includes(searchQuery.toLowerCase())
+        c.name.toLowerCase().includes(search) ||
+        (c.customerCode && c.customerCode.toLowerCase().includes(search))
     );
-  }, [customers, searchQuery]);
+  }, [customers, deferredSearch]);
 
   const handleDelete = async () => {
     if (!customerToDelete) return;
@@ -67,7 +79,7 @@ export function CustomerTable({
     }
   };
 
-  const columns = useMemo<ColumnDef<any>[]>(
+  const columns = useMemo<ColumnDef<Customer>[]>(
     () => [
       {
         accessorKey: "customerCode",

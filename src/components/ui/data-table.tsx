@@ -9,8 +9,7 @@ import {
   SortingState,
   useReactTable,
 } from "@tanstack/react-table";
-import { useVirtualizer } from "@tanstack/react-virtual";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -55,26 +54,11 @@ export function DataTable<TData, TValue>({
     },
   });
 
-  const { rows } = table.getRowModel();
-  const parentRef = useRef<HTMLDivElement>(null);
-
-  const virtualizer = useVirtualizer({
-    count: rows.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 64, // Estimate row height
-    overscan: 10,
-  });
-
-  const virtualItems = virtualizer.getVirtualItems();
-
   return (
-    <div className={cn("rounded-md border flex flex-col overflow-hidden bg-background", className)}>
-      <div 
-        ref={parentRef} 
-        className={cn("w-full overflow-auto", maxHeight)}
-      >
+    <div className={cn("rounded-md border flex flex-col bg-background", className)}>
+      <div className={cn("w-full overflow-x-auto", maxHeight)}>
         <table className="w-full caption-bottom text-sm">
-          <TableHeader className="bg-background z-10 shadow-sm hover:bg-background">
+          <TableHeader className="bg-background shadow-sm hover:bg-background">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className="hover:bg-transparent">
                 {headerGroup.headers.map((header) => {
@@ -93,49 +77,27 @@ export function DataTable<TData, TValue>({
             ))}
           </TableHeader>
           <TableBody>
-            {rows.length === 0 ? (
+            {table.getRowModel().rows.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={columns.length} className="h-24 text-center">
                   No results.
                 </TableCell>
               </TableRow>
             ) : (
-              <>
-                {virtualItems.length > 0 && (
-                  <tr className="border-0">
-                    <td style={{ height: `${virtualItems[0].start}px` }} />
-                  </tr>
-                )}
-                {virtualItems.map((virtualRow) => {
-                  const row = rows[virtualRow.index];
-                  return (
-                    <TableRow
-                      key={row.id}
-                      data-state={row.getIsSelected() && "selected"}
-                      onClick={() => onRowClick?.(row.original)}
-                      className={cn(onRowClick && "cursor-pointer")}
-                    >
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  );
-                })}
-                {virtualItems.length > 0 && (
-                  <tr className="border-0">
-                    <td
-                      style={{
-                        height: `${
-                          virtualizer.getTotalSize() -
-                          virtualItems[virtualItems.length - 1].end
-                        }px`,
-                      }}
-                    />
-                  </tr>
-                )}
-              </>
+              table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                  onClick={() => onRowClick?.(row.original)}
+                  className={cn(onRowClick && "cursor-pointer")}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
             )}
           </TableBody>
         </table>

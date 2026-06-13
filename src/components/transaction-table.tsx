@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useDeferredValue } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,16 +24,33 @@ import { format } from "date-fns";
 import { DataTable } from "@/components/ui/data-table";
 import { useQuery } from "@tanstack/react-query";
 
+const currencyFormatter = new Intl.NumberFormat("id-ID", {
+  maximumFractionDigits: 0,
+});
+
+export interface Transaction {
+  id: string;
+  transactionDate: string | Date;
+  bonNumber: string;
+  customerName: string;
+  status: string;
+  subtotalOmzet: number;
+  shippingCost: number;
+  totalAmount: number;
+  [key: string]: any;
+}
+
 export function TransactionTable({
   transactions: initialTransactions,
   headerActions,
 }: {
-  transactions: any[];
+  transactions: Transaction[];
   headerActions?: React.ReactNode;
 }) {
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
-  const [transactionToDelete, setTransactionToDelete] = useState<any>(null);
+  const [transactionToDelete, setTransactionToDelete] = useState<Transaction | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const deferredSearch = useDeferredValue(searchQuery);
   const router = useRouter();
 
   const { data: transactions, refetch } = useQuery({
@@ -43,12 +60,14 @@ export function TransactionTable({
   });
 
   const filteredTransactions = useMemo(() => {
+    const search = deferredSearch.toLowerCase();
+    if (!search) return transactions;
     return transactions.filter(
       (t) =>
-        t.bonNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        t.customerName.toLowerCase().includes(searchQuery.toLowerCase())
+        (t.bonNumber && t.bonNumber.toLowerCase().includes(search)) ||
+        (t.customerName && t.customerName.toLowerCase().includes(search))
     );
-  }, [transactions, searchQuery]);
+  }, [transactions, deferredSearch]);
 
   const handleDelete = async () => {
     if (!transactionToDelete) return;
@@ -67,7 +86,7 @@ export function TransactionTable({
     }
   };
 
-  const columns = useMemo<ColumnDef<any>[]>(
+  const columns = useMemo<ColumnDef<Transaction>[]>(
     () => [
       {
         accessorKey: "transactionDate",
@@ -101,19 +120,19 @@ export function TransactionTable({
       {
         accessorKey: "subtotalOmzet",
         header: "Omzet",
-        cell: ({ row }) => `Rp ${Number(row.original.subtotalOmzet).toLocaleString("id-ID", { maximumFractionDigits: 0 })}`,
+        cell: ({ row }) => `Rp ${currencyFormatter.format(row.original.subtotalOmzet)}`,
       },
       {
         accessorKey: "shippingCost",
         header: "Shipping",
-        cell: ({ row }) => `Rp ${Number(row.original.shippingCost).toLocaleString("id-ID", { maximumFractionDigits: 0 })}`,
+        cell: ({ row }) => `Rp ${currencyFormatter.format(row.original.shippingCost)}`,
       },
       {
         accessorKey: "totalAmount",
         header: "Total Tagihan",
         cell: ({ row }) => (
           <span className="font-bold">
-            Rp {Number(row.original.totalAmount).toLocaleString("id-ID", { maximumFractionDigits: 0 })}
+            Rp {currencyFormatter.format(row.original.totalAmount)}
           </span>
         ),
       },

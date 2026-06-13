@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useDeferredValue } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,18 +22,33 @@ import {
 import { DataTable } from "@/components/ui/data-table";
 import { useQuery } from "@tanstack/react-query";
 
+const currencyFormatter = new Intl.NumberFormat("id-ID", {
+  maximumFractionDigits: 0,
+});
+
+export type Product = {
+  id: string;
+  productCode: string;
+  name: string;
+  productType: "LM" | "BR" | string;
+  costPrice: number;
+  basePrice: number;
+  [key: string]: any;
+};
+
 export function ProductTable({
   products: initialProducts,
   onEdit,
   headerActions,
 }: {
-  products: any[];
-  onEdit: (product: any) => void;
+  products: Product[];
+  onEdit: (product: Product) => void;
   headerActions?: React.ReactNode;
 }) {
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
-  const [productToDelete, setProductToDelete] = useState<any>(null);
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const deferredSearch = useDeferredValue(searchQuery);
   const router = useRouter();
 
   const { data: products, refetch } = useQuery({
@@ -43,12 +58,14 @@ export function ProductTable({
   });
 
   const filteredProducts = useMemo(() => {
+    const search = deferredSearch.toLowerCase();
+    if (!search) return products;
     return products.filter(
       (p) =>
-        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.productCode.toLowerCase().includes(searchQuery.toLowerCase())
+        p.name.toLowerCase().includes(search) ||
+        (p.productCode && p.productCode.toLowerCase().includes(search))
     );
-  }, [products, searchQuery]);
+  }, [products, deferredSearch]);
 
   const handleDelete = async () => {
     if (!productToDelete) return;
@@ -67,7 +84,7 @@ export function ProductTable({
     }
   };
 
-  const columns = useMemo<ColumnDef<any>[]>(
+  const columns = useMemo<ColumnDef<Product>[]>(
     () => [
       {
         accessorKey: "productCode",
@@ -93,12 +110,12 @@ export function ProductTable({
       {
         accessorKey: "costPrice",
         header: "Cost Price",
-        cell: ({ row }) => `Rp ${Number(row.original.costPrice).toLocaleString("id-ID", { maximumFractionDigits: 0 })}`,
+        cell: ({ row }) => `Rp ${currencyFormatter.format(row.original.costPrice)}`,
       },
       {
         accessorKey: "basePrice",
         header: "Base Selling Price",
-        cell: ({ row }) => `Rp ${Number(row.original.basePrice).toLocaleString("id-ID", { maximumFractionDigits: 0 })}`,
+        cell: ({ row }) => `Rp ${currencyFormatter.format(row.original.basePrice)}`,
       },
       {
         id: "actions",

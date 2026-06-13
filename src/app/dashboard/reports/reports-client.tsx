@@ -8,7 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { IconDownload, IconLoader2 } from "@tabler/icons-react";
+import { IconDownload, IconLoader2, IconSearch } from "@tabler/icons-react";
+import { DataTable } from "@/components/ui/data-table";
+import { Input } from "@/components/ui/input";
+import { ColumnDef } from "@tanstack/react-table";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useMemo } from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -23,6 +28,55 @@ export function ReportsClient() {
   const [customerData, setCustomerData] = useState<any[]>([]);
   const [productTypeData, setProductTypeData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  const customerColumns = useMemo<ColumnDef<any>[]>(
+    () => [
+      {
+        accessorKey: "customerName",
+        header: "Customer",
+        cell: ({ row }) => <span className="font-medium">{row.original.customerName}</span>,
+      },
+      {
+        accessorKey: "totalPiutang",
+        header: () => <div className="text-right text-destructive">Piutang</div>,
+        cell: ({ row }) => <div className="text-right text-destructive">Rp {row.original.totalPiutang.toLocaleString("id-ID", { maximumFractionDigits: 0 })}</div>,
+      },
+      {
+        accessorKey: "totalDibayar",
+        header: () => <div className="text-right">Sudah Dibayar</div>,
+        cell: ({ row }) => <div className="text-right">Rp {row.original.totalDibayar.toLocaleString("id-ID", { maximumFractionDigits: 0 })}</div>,
+      },
+      {
+        accessorKey: "totalOmzetLM",
+        header: () => <div className="text-right text-amber-600">Omzet LM</div>,
+        cell: ({ row }) => <div className="text-right text-amber-600">Rp {row.original.totalOmzetLM.toLocaleString("id-ID", { maximumFractionDigits: 0 })}</div>,
+      },
+      {
+        accessorKey: "totalOmzetBR",
+        header: () => <div className="text-right text-blue-600">Omzet BR</div>,
+        cell: ({ row }) => <div className="text-right text-blue-600">Rp {row.original.totalOmzetBR.toLocaleString("id-ID", { maximumFractionDigits: 0 })}</div>,
+      },
+      {
+        accessorKey: "totalOmzet",
+        header: () => <div className="text-right font-bold">Total Omzet</div>,
+        cell: ({ row }) => <div className="text-right font-bold">Rp {row.original.totalOmzet.toLocaleString("id-ID", { maximumFractionDigits: 0 })}</div>,
+      },
+      {
+        accessorKey: "totalLaba",
+        header: () => <div className="text-right text-primary">Laba HL</div>,
+        cell: ({ row }) => <div className="text-right font-bold text-primary">Rp {row.original.totalLaba.toLocaleString("id-ID", { maximumFractionDigits: 0 })}</div>,
+      },
+    ],
+    []
+  );
+
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredCustomerData = useMemo(() => {
+    return customerData.filter((c) =>
+      c.customerName.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [customerData, searchQuery]);
 
   const fetchReports = async () => {
     setIsLoading(true);
@@ -112,9 +166,15 @@ export function ReportsClient() {
         
         <TabsContent value="overall">
           {isLoading || !overallData ? (
-            <div className="py-24 flex flex-col items-center justify-center text-muted-foreground gap-3">
-              <IconLoader2 className="h-8 w-8 animate-spin text-primary" />
-              <span>Loading recap...</span>
+            <div className="space-y-6">
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <Skeleton className="h-[120px] w-full" />
+                <Skeleton className="h-[120px] w-full" />
+                <Skeleton className="h-[120px] w-full" />
+                <Skeleton className="h-[120px] w-full" />
+                <Skeleton className="h-[120px] w-full" />
+                <Skeleton className="h-[120px] w-full" />
+              </div>
             </div>
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -154,37 +214,18 @@ export function ReportsClient() {
                 <IconDownload className="mr-2 h-4 w-4" /> Export PDF
               </Button>
             </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Customer</TableHead>
-                    <TableHead className="text-right text-destructive">Piutang</TableHead>
-                    <TableHead className="text-right">Sudah Dibayar</TableHead>
-                    <TableHead className="text-right text-amber-600">Omzet LM</TableHead>
-                    <TableHead className="text-right text-blue-600">Omzet BR</TableHead>
-                    <TableHead className="text-right font-bold">Total Omzet</TableHead>
-                    <TableHead className="text-right text-primary">Laba HL</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {customerData.length === 0 ? (
-                    <TableRow><TableCell colSpan={7} className="text-center py-6 text-muted-foreground">No data for this month.</TableCell></TableRow>
-                  ) : (
-                    customerData.map((c) => (
-                      <TableRow key={c.customerId}>
-                        <TableCell className="font-medium">{c.customerName}</TableCell>
-                        <TableCell className="text-right text-destructive">Rp {c.totalPiutang.toLocaleString("id-ID", { maximumFractionDigits: 0 })}</TableCell>
-                        <TableCell className="text-right">Rp {c.totalDibayar.toLocaleString("id-ID", { maximumFractionDigits: 0 })}</TableCell>
-                        <TableCell className="text-right text-amber-600">Rp {c.totalOmzetLM.toLocaleString("id-ID", { maximumFractionDigits: 0 })}</TableCell>
-                        <TableCell className="text-right text-blue-600">Rp {c.totalOmzetBR.toLocaleString("id-ID", { maximumFractionDigits: 0 })}</TableCell>
-                        <TableCell className="text-right font-bold">Rp {c.totalOmzet.toLocaleString("id-ID", { maximumFractionDigits: 0 })}</TableCell>
-                        <TableCell className="text-right font-bold text-primary">Rp {c.totalLaba.toLocaleString("id-ID", { maximumFractionDigits: 0 })}</TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+            <CardContent className="space-y-4">
+              <div className="relative max-w-sm">
+                <IconSearch className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder="Search customer..."
+                  className="pl-8"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <DataTable columns={customerColumns} data={filteredCustomerData} />
             </CardContent>
           </Card>
         </TabsContent>
