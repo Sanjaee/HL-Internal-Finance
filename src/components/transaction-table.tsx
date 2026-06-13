@@ -32,11 +32,11 @@ export interface Transaction {
   id: string;
   transactionDate: string | Date;
   bonNumber: string;
-  customerName: string;
-  status: string;
-  subtotalOmzet: number;
-  shippingCost: number;
-  totalAmount: number;
+  customerName: string | null;
+  status: string | null;
+  subtotalOmzet: string | number | null;
+  shippingCost: string | number | null;
+  totalAmount: string | number | null;
   [key: string]: any;
 }
 
@@ -120,19 +120,19 @@ export function TransactionTable({
       {
         accessorKey: "subtotalOmzet",
         header: "Omzet",
-        cell: ({ row }) => `Rp ${currencyFormatter.format(row.original.subtotalOmzet)}`,
+        cell: ({ row }) => `Rp ${currencyFormatter.format(Number(row.original.subtotalOmzet || 0))}`,
       },
       {
         accessorKey: "shippingCost",
         header: "Shipping",
-        cell: ({ row }) => `Rp ${currencyFormatter.format(row.original.shippingCost)}`,
+        cell: ({ row }) => `Rp ${currencyFormatter.format(Number(row.original.shippingCost || 0))}`,
       },
       {
         accessorKey: "totalAmount",
         header: "Total Tagihan",
         cell: ({ row }) => (
           <span className="font-bold">
-            Rp {currencyFormatter.format(row.original.totalAmount)}
+            Rp {currencyFormatter.format(Number(row.original.totalAmount || 0))}
           </span>
         ),
       },
