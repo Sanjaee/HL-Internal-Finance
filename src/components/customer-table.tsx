@@ -1,19 +1,12 @@
 "use client";
 
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { useMemo, useState } from "react";
+import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { IconEdit, IconTrash, IconSearch } from "@tabler/icons-react";
 import { deleteCustomer } from "@/actions/customer-actions";
 import { toast } from "sonner";
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import {
@@ -26,17 +19,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
+import { DataTable } from "@/components/ui/data-table";
+import { useQuery } from "@tanstack/react-query";
 
 export function CustomerTable({
-  customers,
+  customers: initialCustomers,
   onEdit,
   headerActions,
 }: {
@@ -46,27 +33,22 @@ export function CustomerTable({
 }) {
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [customerToDelete, setCustomerToDelete] = useState<any>(null);
-  const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
 
-  const filteredCustomers = customers.filter(
-    (c) =>
-      c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.customerCode.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const { data: customers, refetch } = useQuery({
+    queryKey: ["customers"],
+    queryFn: async () => initialCustomers, // Replaces with API fetch eventually
+    initialData: initialCustomers,
+  });
 
-  const ITEMS_PER_PAGE = 20;
-  const totalPages = Math.ceil(filteredCustomers.length / ITEMS_PER_PAGE);
-  const currentCustomers = filteredCustomers.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  );
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-    setCurrentPage(1);
-  };
+  const filteredCustomers = useMemo(() => {
+    return customers.filter(
+      (c) =>
+        c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        c.customerCode.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [customers, searchQuery]);
 
   const handleDelete = async () => {
     if (!customerToDelete) return;
@@ -79,10 +61,72 @@ export function CustomerTable({
     if (res.success) {
       toast.success("Customer deleted successfully");
       router.refresh();
+      refetch();
     } else {
       toast.error(res.error || "Failed to delete customer");
     }
   };
+
+  const columns = useMemo<ColumnDef<any>[]>(
+    () => [
+      {
+        accessorKey: "customerCode",
+        header: "Customer Code",
+        cell: ({ row }) => <span className="font-medium">{row.original.customerCode}</span>,
+      },
+      {
+        accessorKey: "name",
+        header: "Name",
+      },
+      {
+        accessorKey: "bonusThreshold",
+        header: "Bonus Threshold",
+        cell: ({ row }) => `Rp ${Number(row.original.bonusThreshold).toLocaleString("id-ID", { maximumFractionDigits: 0 })}`,
+      },
+      {
+        accessorKey: "status",
+        header: "Status",
+        cell: () => (
+          <Badge variant="outline" className="bg-green-50 text-green-700 hover:bg-green-50">
+            Active
+          </Badge>
+        ),
+      },
+      {
+        id: "actions",
+        header: () => <div className="text-right">Action</div>,
+        cell: ({ row }) => {
+          const customer = row.original;
+          return (
+            <div className="flex justify-end gap-2">
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(customer);
+                }}
+              >
+                <IconEdit className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="destructive"
+                size="icon"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCustomerToDelete(customer);
+                }}
+                disabled={isDeleting === customer.id}
+              >
+                <IconTrash className="h-4 w-4" />
+              </Button>
+            </div>
+          );
+        },
+      },
+    ],
+    [onEdit, isDeleting]
+  );
 
   return (
     <div className="space-y-4">
@@ -94,94 +138,13 @@ export function CustomerTable({
             placeholder="Search customers..."
             className="pl-8"
             value={searchQuery}
-            onChange={handleSearchChange}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
         {headerActions && <div>{headerActions}</div>}
       </div>
 
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Customer Code</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Bonus Threshold</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Action</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {currentCustomers.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
-                  No customers found. Click "Add Customer" to create one.
-                </TableCell>
-              </TableRow>
-            ) : (
-              currentCustomers.map((customer) => (
-                <TableRow key={customer.id}>
-                  <TableCell className="font-medium">{customer.customerCode}</TableCell>
-                  <TableCell>{customer.name}</TableCell>
-                  <TableCell>Rp {Number(customer.bonusThreshold).toLocaleString("id-ID", { maximumFractionDigits: 0 })}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="bg-green-50 text-green-700 hover:bg-green-50">
-                      Active
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button variant="outline" size="icon" onClick={() => onEdit(customer)}>
-                        <IconEdit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="icon"
-                        onClick={() => setCustomerToDelete(customer)}
-                        disabled={isDeleting === customer.id}
-                      >
-                        <IconTrash className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
-      {totalPages > 1 && (
-        <Pagination>
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setCurrentPage((p) => Math.max(1, p - 1));
-                }}
-                className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
-              />
-            </PaginationItem>
-            <PaginationItem>
-              <span className="px-4 text-sm font-medium">
-                Page {currentPage} of {totalPages}
-              </span>
-            </PaginationItem>
-            <PaginationItem>
-              <PaginationNext
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setCurrentPage((p) => Math.min(totalPages, p + 1));
-                }}
-                className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
-              />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
-      )}
+      <DataTable columns={columns} data={filteredCustomers} />
 
       <AlertDialog open={!!customerToDelete} onOpenChange={(open) => !open && setCustomerToDelete(null)}>
         <AlertDialogContent>

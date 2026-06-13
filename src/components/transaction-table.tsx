@@ -1,19 +1,12 @@
 "use client";
 
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { useMemo, useState } from "react";
+import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { IconEye, IconTrash, IconSearch } from "@tabler/icons-react";
 import { deleteTransaction } from "@/actions/transaction-actions";
 import { toast } from "sonner";
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import {
@@ -28,17 +21,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import Link from "next/link";
 import { format } from "date-fns";
-
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
+import { DataTable } from "@/components/ui/data-table";
+import { useQuery } from "@tanstack/react-query";
 
 export function TransactionTable({
-  transactions,
+  transactions: initialTransactions,
   headerActions,
 }: {
   transactions: any[];
@@ -46,27 +33,22 @@ export function TransactionTable({
 }) {
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [transactionToDelete, setTransactionToDelete] = useState<any>(null);
-  const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
 
-  const filteredTransactions = transactions.filter(
-    (t) =>
-      t.bonNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.customerName.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const { data: transactions, refetch } = useQuery({
+    queryKey: ["transactions"],
+    queryFn: async () => initialTransactions, // In a real app, this would fetch from an API
+    initialData: initialTransactions,
+  });
 
-  const ITEMS_PER_PAGE = 20;
-  const totalPages = Math.ceil(filteredTransactions.length / ITEMS_PER_PAGE);
-  const currentTransactions = filteredTransactions.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  );
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-    setCurrentPage(1);
-  };
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter(
+      (t) =>
+        t.bonNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        t.customerName.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [transactions, searchQuery]);
 
   const handleDelete = async () => {
     if (!transactionToDelete) return;
@@ -79,10 +61,92 @@ export function TransactionTable({
     if (res.success) {
       toast.success("Transaction deleted successfully");
       router.refresh();
+      refetch();
     } else {
       toast.error(res.error || "Failed to delete transaction");
     }
   };
+
+  const columns = useMemo<ColumnDef<any>[]>(
+    () => [
+      {
+        accessorKey: "transactionDate",
+        header: "Date",
+        cell: ({ row }) => format(new Date(row.original.transactionDate), "dd MMM yyyy"),
+      },
+      {
+        accessorKey: "bonNumber",
+        header: "Bon Number",
+        cell: ({ row }) => <span className="font-medium">{row.original.bonNumber}</span>,
+      },
+      {
+        accessorKey: "customerName",
+        header: "Customer",
+      },
+      {
+        accessorKey: "status",
+        header: "Status",
+        cell: ({ row }) => {
+          const status = row.original.status;
+          return (
+            <Badge
+              variant={status === "LUNAS" ? "default" : "destructive"}
+              className={status === "LUNAS" ? "bg-green-600 hover:bg-green-700" : ""}
+            >
+              {status}
+            </Badge>
+          );
+        },
+      },
+      {
+        accessorKey: "subtotalOmzet",
+        header: "Omzet",
+        cell: ({ row }) => `Rp ${Number(row.original.subtotalOmzet).toLocaleString("id-ID", { maximumFractionDigits: 0 })}`,
+      },
+      {
+        accessorKey: "shippingCost",
+        header: "Shipping",
+        cell: ({ row }) => `Rp ${Number(row.original.shippingCost).toLocaleString("id-ID", { maximumFractionDigits: 0 })}`,
+      },
+      {
+        accessorKey: "totalAmount",
+        header: "Total Tagihan",
+        cell: ({ row }) => (
+          <span className="font-bold">
+            Rp {Number(row.original.totalAmount).toLocaleString("id-ID", { maximumFractionDigits: 0 })}
+          </span>
+        ),
+      },
+      {
+        id: "actions",
+        header: () => <div className="text-right">Action</div>,
+        cell: ({ row }) => {
+          const t = row.original;
+          return (
+            <div className="flex justify-end gap-2">
+              <Link href={`/dashboard/transactions/${t.id}`}>
+                <Button variant="outline" size="icon">
+                  <IconEye className="h-4 w-4" />
+                </Button>
+              </Link>
+              <Button
+                variant="destructive"
+                size="icon"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setTransactionToDelete(t);
+                }}
+                disabled={isDeleting === t.id}
+              >
+                <IconTrash className="h-4 w-4" />
+              </Button>
+            </div>
+          );
+        },
+      },
+    ],
+    [isDeleting]
+  );
 
   return (
     <div className="space-y-4">
@@ -94,102 +158,13 @@ export function TransactionTable({
             placeholder="Search by Bon Number or Customer..."
             className="pl-8"
             value={searchQuery}
-            onChange={handleSearchChange}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
         {headerActions && <div>{headerActions}</div>}
       </div>
 
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Date</TableHead>
-              <TableHead>Bon Number</TableHead>
-              <TableHead>Customer</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Omzet</TableHead>
-              <TableHead>Shipping</TableHead>
-              <TableHead>Total Tagihan</TableHead>
-              <TableHead className="text-right">Action</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {currentTransactions.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
-                  No transactions found. Click "Create Bon" to make one.
-                </TableCell>
-              </TableRow>
-            ) : (
-              currentTransactions.map((t) => (
-                <TableRow key={t.id}>
-                  <TableCell>{format(new Date(t.transactionDate), "dd MMM yyyy")}</TableCell>
-                  <TableCell className="font-medium">{t.bonNumber}</TableCell>
-                  <TableCell>{t.customerName}</TableCell>
-                  <TableCell>
-                    <Badge variant={t.status === "LUNAS" ? "default" : "destructive"} className={t.status === "LUNAS" ? "bg-green-600 hover:bg-green-700" : ""}>
-                      {t.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>Rp {Number(t.subtotalOmzet).toLocaleString("id-ID", { maximumFractionDigits: 0 })}</TableCell>
-                  <TableCell>Rp {Number(t.shippingCost).toLocaleString("id-ID", { maximumFractionDigits: 0 })}</TableCell>
-                  <TableCell className="font-bold">Rp {Number(t.totalAmount).toLocaleString("id-ID", { maximumFractionDigits: 0 })}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Link href={`/dashboard/transactions/${t.id}`}>
-                        <Button variant="outline" size="icon">
-                          <IconEye className="h-4 w-4" />
-                        </Button>
-                      </Link>
-                      <Button
-                        variant="destructive"
-                        size="icon"
-                        onClick={() => setTransactionToDelete(t)}
-                        disabled={isDeleting === t.id}
-                      >
-                        <IconTrash className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
-      {totalPages > 1 && (
-        <Pagination>
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setCurrentPage((p) => Math.max(1, p - 1));
-                }}
-                className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
-              />
-            </PaginationItem>
-            <PaginationItem>
-              <span className="px-4 text-sm font-medium">
-                Page {currentPage} of {totalPages}
-              </span>
-            </PaginationItem>
-            <PaginationItem>
-              <PaginationNext
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setCurrentPage((p) => Math.min(totalPages, p + 1));
-                }}
-                className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
-              />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
-      )}
+      <DataTable columns={columns} data={filteredTransactions} />
 
       <AlertDialog open={!!transactionToDelete} onOpenChange={(open) => !open && setTransactionToDelete(null)}>
         <AlertDialogContent>
