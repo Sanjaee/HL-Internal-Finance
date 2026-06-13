@@ -1,40 +1,99 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
-import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { IconGift, IconSearch } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import { BonusRedeemModal } from "./bonus-redeem-modal";
 import { Input } from "@/components/ui/input";
+import { DataTable } from "@/components/ui/data-table";
+import { ColumnDef } from "@tanstack/react-table";
 
 export function BonusClient({ bonusStatus, products }: { bonusStatus: any[], products: any[] }) {
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterMode, setFilterMode] = useState<"all" | "redeem">("all");
-  const [page, setPage] = useState(1);
-  const ITEMS_PER_PAGE = 20;
   const router = useRouter();
 
-  const filteredBonusStatus = bonusStatus.filter((c) => {
-    if (filterMode === "redeem" && c.available <= 0) return false;
-    return c.name.toLowerCase().includes(searchQuery.toLowerCase());
-  });
+  const filteredBonusStatus = useMemo(() => {
+    return bonusStatus.filter((c) => {
+      if (filterMode === "redeem" && c.available <= 0) return false;
+      return c.name.toLowerCase().includes(searchQuery.toLowerCase());
+    });
+  }, [bonusStatus, filterMode, searchQuery]);
 
   const handleClose = () => {
     setSelectedCustomer(null);
     router.refresh();
   };
+
+  const columns = useMemo<ColumnDef<any>[]>(
+    () => [
+      {
+        accessorKey: "name",
+        header: "Customer",
+        cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
+      },
+      {
+        accessorKey: "bonusThreshold",
+        header: "Threshold",
+        cell: ({ row }) => `Rp ${Number(row.original.bonusThreshold).toLocaleString("id-ID", { maximumFractionDigits: 0 })}`,
+      },
+      {
+        id: "progress",
+        header: "Progress (Current Cycle)",
+        cell: ({ row }) => {
+          const c = row.original;
+          return (
+            <div className="w-[300px] flex flex-col gap-1">
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Rp {c.currentCycleProgress.toLocaleString("id-ID", { maximumFractionDigits: 0 })}</span>
+                <span>Rp {Number(c.bonusThreshold).toLocaleString("id-ID", { maximumFractionDigits: 0 })}</span>
+              </div>
+              <Progress value={c.progressPercent} className="h-2" />
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: "totalEarned",
+        header: "Total Earned",
+      },
+      {
+        id: "available",
+        header: "Available",
+        cell: ({ row }) => {
+          const c = row.original;
+          return c.available > 0 ? (
+            <Badge className="bg-green-600 hover:bg-green-700">{c.available} Available</Badge>
+          ) : (
+            <Badge variant="outline">0</Badge>
+          );
+        },
+      },
+      {
+        id: "action",
+        header: () => <div className="text-right">Action</div>,
+        cell: ({ row }) => {
+          const c = row.original;
+          return (
+            <div className="flex justify-end">
+              <Button
+                variant={c.available > 0 ? "default" : "outline"}
+                disabled={c.available <= 0}
+                onClick={() => setSelectedCustomer(c)}
+              >
+                <IconGift className="mr-2 h-4 w-4" /> Redeem
+              </Button>
+            </div>
+          );
+        },
+      },
+    ],
+    []
+  );
 
   return (
     <div className="flex flex-1 flex-col gap-4">
@@ -55,109 +114,27 @@ export function BonusClient({ bonusStatus, products }: { bonusStatus: any[], pro
             placeholder="Search customer..."
             className="pl-8"
             value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setPage(1);
-            }}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
 
         <div className="flex bg-muted p-1 rounded-md">
           <button
             className={`px-3 py-1.5 text-sm font-medium rounded-sm transition-all ${filterMode === "all" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-            onClick={() => { setFilterMode("all"); setPage(1); }}
+            onClick={() => setFilterMode("all")}
           >
             All Customers
           </button>
           <button
             className={`px-3 py-1.5 text-sm font-medium rounded-sm transition-all ${filterMode === "redeem" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-            onClick={() => { setFilterMode("redeem"); setPage(1); }}
+            onClick={() => setFilterMode("redeem")}
           >
             Ready to Redeem
           </button>
         </div>
       </div>
 
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Customer</TableHead>
-              <TableHead>Threshold</TableHead>
-              <TableHead>Progress (Current Cycle)</TableHead>
-              <TableHead>Total Earned</TableHead>
-              <TableHead>Available</TableHead>
-              <TableHead className="text-right">Action</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredBonusStatus.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
-                  No active customers found.
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredBonusStatus.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE).map((c) => (
-                <TableRow key={c.id}>
-                  <TableCell className="font-medium">{c.name}</TableCell>
-                  <TableCell>Rp {Number(c.bonusThreshold).toLocaleString("id-ID", { maximumFractionDigits: 0 })}</TableCell>
-                  <TableCell className="w-[300px]">
-                    <div className="flex flex-col gap-1">
-                      <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>Rp {c.currentCycleProgress.toLocaleString("id-ID", { maximumFractionDigits: 0 })}</span>
-                        <span>Rp {Number(c.bonusThreshold).toLocaleString("id-ID", { maximumFractionDigits: 0 })}</span>
-                      </div>
-                      <Progress value={c.progressPercent} className="h-2" />
-                    </div>
-                  </TableCell>
-                  <TableCell>{c.totalEarned}</TableCell>
-                  <TableCell>
-                    {c.available > 0 ? (
-                      <Badge className="bg-green-600 hover:bg-green-700">{c.available} Available</Badge>
-                    ) : (
-                      <Badge variant="outline">0</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant={c.available > 0 ? "default" : "outline"}
-                      disabled={c.available <= 0}
-                      onClick={() => setSelectedCustomer(c)}
-                    >
-                      <IconGift className="mr-2 h-4 w-4" /> Redeem
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
-      {Math.ceil(filteredBonusStatus.length / ITEMS_PER_PAGE) > 1 && (
-        <Pagination>
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious 
-                href="#" 
-                onClick={(e) => { e.preventDefault(); setPage((p) => Math.max(1, p - 1)); }} 
-                className={page === 1 ? "pointer-events-none opacity-50" : ""} 
-              />
-            </PaginationItem>
-            <PaginationItem>
-              <span className="px-4 text-sm font-medium">Page {page} of {Math.ceil(filteredBonusStatus.length / ITEMS_PER_PAGE)}</span>
-            </PaginationItem>
-            <PaginationItem>
-              <PaginationNext 
-                href="#" 
-                onClick={(e) => { e.preventDefault(); setPage((p) => Math.min(Math.ceil(filteredBonusStatus.length / ITEMS_PER_PAGE), p + 1)); }} 
-                className={page === Math.ceil(filteredBonusStatus.length / ITEMS_PER_PAGE) ? "pointer-events-none opacity-50" : ""} 
-              />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
-      )}
+      <DataTable columns={columns} data={filteredBonusStatus} />
 
       <BonusRedeemModal
         customer={selectedCustomer}

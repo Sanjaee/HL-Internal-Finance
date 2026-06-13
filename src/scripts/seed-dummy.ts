@@ -33,42 +33,52 @@ async function main() {
         console.log("No user found, you should run seed-admin.ts first, but I will try to proceed without createdBy if possible or create a dummy user.");
     }
 
-    // 1. Seed 100 Customers
-    console.log("Seeding customers...");
-    const newCustomers = [];
-    for (let i = 0; i < 100; i++) {
-      newCustomers.push({
-        customerCode: `CUST-${faker.string.alphanumeric(6).toUpperCase()}`,
-        name: faker.person.fullName(),
-        bonusThreshold: faker.number.float({ min: 1000000, max: 10000000, fractionDigits: 2 }).toString(),
-        accumulatedBonusOmzet: "0",
-        grantedBonusCount: 0,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
+    // 1. Seed 20,000 Customers
+    console.log("Seeding 20,000 customers...");
+    const insertedCustomers = [];
+    for (let chunk = 0; chunk < 20; chunk++) {
+      console.log(`Processing customers chunk ${chunk + 1} of 20...`);
+      const newCustomers = [];
+      for (let i = 0; i < 1000; i++) {
+        newCustomers.push({
+          customerCode: `CUST-${faker.string.alphanumeric(4).toUpperCase()}-${chunk}${i}`,
+          name: faker.person.fullName(),
+          bonusThreshold: faker.number.float({ min: 1000000, max: 10000000, fractionDigits: 2 }).toString(),
+          accumulatedBonusOmzet: "0",
+          grantedBonusCount: 0,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+      }
+      const insertedChunk = await db.insert(customers).values(newCustomers).returning();
+      insertedCustomers.push(...insertedChunk);
     }
-    const insertedCustomers = await db.insert(customers).values(newCustomers).returning();
 
-    // 2. Seed 100 Products
-    console.log("Seeding products...");
-    const newProducts = [];
-    for (let i = 0; i < 100; i++) {
-      const isLM = faker.datatype.boolean();
-      const productType = (isLM ? "LM" : "BR") as "LM" | "BR";
-      const costPrice = faker.number.float({ min: 10000, max: 500000, fractionDigits: 2 });
-      const basePrice = costPrice * faker.number.float({ min: 1.1, max: 1.5 });
+    // 2. Seed 20,000 Products
+    console.log("Seeding 20,000 products...");
+    const insertedProducts = [];
+    for (let chunk = 0; chunk < 20; chunk++) {
+      console.log(`Processing products chunk ${chunk + 1} of 20...`);
+      const newProducts = [];
+      for (let i = 0; i < 1000; i++) {
+        const isLM = faker.datatype.boolean();
+        const productType = (isLM ? "LM" : "BR") as "LM" | "BR";
+        const costPrice = faker.number.float({ min: 10000, max: 500000, fractionDigits: 2 });
+        const basePrice = costPrice * faker.number.float({ min: 1.1, max: 1.5 });
 
-      newProducts.push({
-        productCode: `PROD-${faker.string.alphanumeric(6).toUpperCase()}`,
-        name: faker.commerce.productName(),
-        productType,
-        costPrice: costPrice.toString(),
-        basePrice: basePrice.toString(),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
+        newProducts.push({
+          productCode: `PROD-${faker.string.alphanumeric(4).toUpperCase()}-${chunk}${i}`,
+          name: faker.commerce.productName(),
+          productType,
+          costPrice: costPrice.toString(),
+          basePrice: basePrice.toString(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+      }
+      const insertedChunk = await db.insert(products).values(newProducts).returning();
+      insertedProducts.push(...insertedChunk);
     }
-    const insertedProducts = await db.insert(products).values(newProducts).returning();
 
     // 3. Seed 20,000 Transactions (Over the last 365 days)
     console.log("Seeding 20,000 transactions...");
