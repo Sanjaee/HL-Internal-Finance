@@ -45,6 +45,7 @@ export const CurrencyInput = React.forwardRef<HTMLInputElement, CurrencyInputPro
       <Input
         {...props}
         type="text"
+        inputMode="numeric"
         ref={ref}
         value={displayValue}
         onChange={handleChange}
