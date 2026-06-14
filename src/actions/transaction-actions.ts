@@ -278,10 +278,9 @@ export async function deleteTransaction(id: string) {
     // Let's hard delete since it's allowed.
     await db.transaction(async (tx) => {
       const [oldTx] = await tx.select().from(transactions).where(eq(transactions.id, id));
-      if (oldTx && oldTx.status === "LUNAS" && !oldTx.isBonusTransaction) {
-        await tx.execute(
-          sql`UPDATE ${customers} SET accumulated_bonus_omzet = accumulated_bonus_omzet - ${Number(oldTx.subtotalOmzet)} WHERE id = ${oldTx.customerId}`
-        );
+      if (!oldTx) throw new Error("Transaction not found");
+      if (oldTx.status === "LUNAS") {
+        throw new Error("Cannot delete a transaction that is already LUNAS.");
       }
 
       const items = await tx.select({ id: transactionItems.id }).from(transactionItems).where(eq(transactionItems.transactionId, id));
@@ -325,6 +324,9 @@ export async function updateTransaction(id: string, data: TransactionFormValues,
     await db.transaction(async (tx) => {
       const [oldTx] = await tx.select().from(transactions).where(eq(transactions.id, id));
       if (!oldTx) throw new Error("Transaction not found");
+      if (oldTx.status === "LUNAS") {
+        throw new Error("Cannot edit a transaction that is already LUNAS.");
+      }
 
       // 1. Fetch Customer Discount Groups
       const discountGroups = await tx
@@ -358,12 +360,7 @@ export async function updateTransaction(id: string, data: TransactionFormValues,
         .where(sql`${products.id} IN ${productIds}`);
       const productMap = new Map(productList.map((p) => [p.id, p]));
 
-      // 3. Subtract old omzet if LUNAS
-      if (oldTx.status === "LUNAS" && !oldTx.isBonusTransaction) {
-        await tx.execute(
-          sql`UPDATE ${customers} SET accumulated_bonus_omzet = accumulated_bonus_omzet - ${Number(oldTx.subtotalOmzet)} WHERE id = ${oldTx.customerId}`
-        );
-      }
+      // 3. (Skipped: We no longer subtract old omzet because LUNAS editing is blocked)
 
       // 4. Delete old items & snapshots
       const oldItems = await tx.select({ id: transactionItems.id }).from(transactionItems).where(eq(transactionItems.transactionId, id));
@@ -449,12 +446,7 @@ export async function updateTransaction(id: string, data: TransactionFormValues,
         updatedAt: new Date(),
       }).where(eq(transactions.id, id));
 
-      // 7. Add new omzet if LUNAS
-      if (oldTx.status === "LUNAS" && !isBonusTransaction) {
-        await tx.execute(
-          sql`UPDATE ${customers} SET accumulated_bonus_omzet = accumulated_bonus_omzet + ${totalSubtotalOmzet} WHERE id = ${customerId}`
-        );
-      }
+      // 7. (Skipped: We no longer add omzet here because LUNAS editing is blocked)
     });
 
     revalidatePath("/dashboard", "layout");

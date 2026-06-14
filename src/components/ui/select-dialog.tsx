@@ -88,17 +88,17 @@ export const SelectDialog: React.FC<SelectDialogProps> = ({
         type="button"
         variant="outline"
         className={cn(
-          "w-full justify-between text-left font-normal",
+          "w-full justify-between text-left font-normal h-auto py-2",
           !selectedOption && "text-muted-foreground",
           className
         )}
         disabled={disabled}
         onClick={() => onOpenChange(true)}
       >
-        <span className="truncate">
+        <span className="whitespace-normal break-words text-left flex-1 mr-2">
           {displayValue || selectedOption?.name || placeholder}
         </span>
-        <ChevronDown className="h-4 w-4 opacity-50" />
+        <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
       </Button>
 
       <Dialog open={open} onOpenChange={onOpenChange}>

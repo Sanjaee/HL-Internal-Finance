@@ -89,17 +89,19 @@ export function TransactionDetailClient({ tx }: { tx: any }) {
         </div>
         <div className="flex flex-wrap gap-2">
           {tx.status === "PIUTANG" && (
-            <Button className="bg-green-600 hover:bg-green-700" onClick={() => setIsLunasOpen(true)}>
-              <IconCheck className="mr-2 h-4 w-4" /> Mark as Lunas
-            </Button>
+            <>
+              <Button className="bg-green-600 hover:bg-green-700" onClick={() => setIsLunasOpen(true)}>
+                <IconCheck className="mr-2 h-4 w-4" /> Mark as Lunas
+              </Button>
+              <Link href={`/dashboard/transactions/${tx.id}/edit`}>
+                <Button variant="outline">Edit Bon</Button>
+              </Link>
+              <Button variant="destructive" onClick={() => setIsDeleteDialogOpen(true)}>
+                <IconTrash className="mr-2 h-4 w-4" />
+                <span>Delete Bon</span>
+              </Button>
+            </>
           )}
-          <Link href={`/dashboard/transactions/${tx.id}/edit`}>
-            <Button variant="outline">Edit Bon</Button>
-          </Link>
-          <Button variant="destructive" onClick={() => setIsDeleteDialogOpen(true)}>
-            <IconTrash className="mr-2 h-4 w-4" />
-            <span>Delete Bon</span>
-          </Button>
         </div>
       </div>
 
