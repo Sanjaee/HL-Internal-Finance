@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { Search, Check, ChevronDown } from "lucide-react";
 import {
   Dialog,
@@ -60,6 +61,15 @@ export const SelectDialog: React.FC<SelectDialogProps> = ({
     }
   }, [searchTerm, options]);
 
+  const [parentRef, setParentRef] = useState<HTMLDivElement | null>(null);
+
+  const rowVirtualizer = useVirtualizer({
+    count: filteredOptions.length,
+    getScrollElement: () => parentRef,
+    estimateSize: () => 40,
+    overscan: 5,
+  });
+
   const handleSelect = (option: SelectOption) => {
     onSelect(option);
     onOpenChange(false);
@@ -111,33 +121,53 @@ export const SelectDialog: React.FC<SelectDialogProps> = ({
               />
             </div>
 
-            <div className="max-h-60 overflow-y-auto">
+            <div ref={setParentRef} className="h-60 overflow-y-auto w-full">
               {filteredOptions.length === 0 ? (
                 <div className="text-center py-6 text-muted-foreground">
                   No results found
                 </div>
               ) : (
-                <div className="space-y-1">
-                  {filteredOptions.map((option) => (
-                    <button
-                      key={option.id || option.code || option.name}
-                      className={cn(
-                        "w-full text-left px-3 py-2 rounded-md text-sm transition-colors hover:bg-accent hover:text-accent-foreground flex items-center justify-between",
-                        (selectedValue?.toString() === option.id?.toString() ||
-                          selectedValue?.toString() ===
-                            option.code?.toString()) &&
-                          "bg-accent text-accent-foreground"
-                      )}
-                      onClick={() => handleSelect(option)}
-                    >
-                      <span className="truncate">{option.name}</span>
-                      {(selectedValue?.toString() === option.id?.toString() ||
-                        selectedValue?.toString() ===
-                          option.code?.toString()) && (
-                        <Check className="h-4 w-4" />
-                      )}
-                    </button>
-                  ))}
+                <div
+                  style={{
+                    height: `${rowVirtualizer.getTotalSize()}px`,
+                    width: "100%",
+                    position: "relative",
+                  }}
+                >
+                  {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                    const option = filteredOptions[virtualRow.index];
+                    return (
+                      <div
+                        key={virtualRow.key}
+                        style={{
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                          width: "100%",
+                          height: `${virtualRow.size}px`,
+                          transform: `translateY(${virtualRow.start}px)`,
+                          paddingBottom: "4px" // acts as space-y-1 equivalent
+                        }}
+                      >
+                        <button
+                          type="button"
+                          className={cn(
+                            "w-full text-left px-3 py-2 rounded-md text-sm transition-colors hover:bg-accent hover:text-accent-foreground flex items-center justify-between",
+                            (selectedValue?.toString() === option.id?.toString() ||
+                              selectedValue?.toString() === option.code?.toString()) &&
+                              "bg-accent text-accent-foreground"
+                          )}
+                          onClick={() => handleSelect(option)}
+                        >
+                          <span className="truncate">{option.name}</span>
+                          {(selectedValue?.toString() === option.id?.toString() ||
+                            selectedValue?.toString() === option.code?.toString()) && (
+                            <Check className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
