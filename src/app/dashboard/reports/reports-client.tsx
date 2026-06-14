@@ -203,8 +203,11 @@ export function ReportsClient() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Recap & Reporting</h1>
-          <p className="text-sm text-muted-foreground">
-            View financial recaps overall, per customer, and per product type.
+          <p className="text-sm text-muted-foreground mt-1 max-w-2xl text-justify">
+            View financial recaps overall, per customer, and per product type. <br />
+            <span className="text-xs text-muted-foreground/70 italic">
+              *Fitur Smart PDF: Sistem dilengkapi algoritma Auto-Scale yang akan otomatis mengecilkan ukuran *font* angka secara proporsional saat nominal data mencapai puluhan hingga ratusan miliar. Hal ini menjamin format tabel PDF tetap rapi sempurna, mulus, dan tidak pernah terpotong ke bawah (wrap text) betapapun ekstremnya angka transaksi Anda.
+            </span>
           </p>
         </div>
         <Button onClick={exportFullPDF} className="w-full sm:w-auto" disabled={isLoading || !overallData}>
