@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Loader2, Eye, EyeOff } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -26,7 +26,6 @@ export function LoginForm({
   ...props
 }: React.ComponentProps<"div">) {
   const router = useRouter();
-  const { toast } = useToast();
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -44,23 +43,18 @@ export function LoginForm({
 
       if (result?.error) {
         setError("Invalid username or password");
-        toast({
-          variant: "destructive",
-          title: "Login Failed",
+        toast.error("Login Failed", {
           description: "Invalid username or password. Please try again.",
         });
       } else {
-        toast({
-          title: "Login Successful",
+        toast.success("Login Successful", {
           description: "Welcome back! Redirecting to dashboard...",
         });
-        window.location.href = "/dashboard";
+        router.push("/dashboard");
       }
     } catch (err) {
       setError("An unexpected error occurred. Please try again.");
-      toast({
-        variant: "destructive",
-        title: "Error",
+      toast.error("Error", {
         description: "An unexpected error occurred. Please try again.",
       });
     }
