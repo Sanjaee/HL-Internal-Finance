@@ -135,9 +135,7 @@ export async function redeemBonus(data: {
 
     });
 
-    revalidatePath("/dashboard/bonus");
-    revalidatePath("/dashboard/transactions");
-    revalidatePath("/dashboard/customers");
+    revalidatePath("/dashboard", "layout");
     return { success: true };
   } catch (error: any) {
     console.error("Failed to redeem bonus:", error);

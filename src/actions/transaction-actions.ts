@@ -230,10 +230,7 @@ export async function createTransaction(data: TransactionFormValues, userId?: st
         totalProfit: String(totalProfit),
       }).where(eq(transactions.id, newTx.id));
     });
-    revalidatePath("/dashboard/transactions");
-    revalidatePath("/dashboard/bonus");
-    revalidatePath("/dashboard/reports");
-    revalidatePath("/dashboard/customers");
+    revalidatePath("/dashboard", "layout");
     return { success: true };
   } catch (error: any) {
     console.error("Failed to create transaction:", error);
@@ -265,11 +262,7 @@ export async function markTransactionLunas(id: string, paymentDate: Date) {
       }
     });
 
-    revalidatePath("/dashboard/transactions");
-    revalidatePath(`/dashboard/transactions/${id}`);
-    revalidatePath("/dashboard/customers");
-    revalidatePath("/dashboard/bonus");
-    revalidatePath("/dashboard/reports");
+    revalidatePath("/dashboard", "layout");
     return { success: true };
   } catch (error: any) {
     console.error("Failed to mark transaction as LUNAS:", error);
@@ -303,10 +296,7 @@ export async function deleteTransaction(id: string) {
       await tx.delete(transactions).where(eq(transactions.id, id));
     });
 
-    revalidatePath("/dashboard/transactions");
-    revalidatePath("/dashboard/customers");
-    revalidatePath("/dashboard/bonus");
-    revalidatePath("/dashboard/reports");
+    revalidatePath("/dashboard", "layout");
     return { success: true };
   } catch (error: any) {
     console.error("Failed to delete transaction:", error);
@@ -466,11 +456,7 @@ export async function updateTransaction(id: string, data: TransactionFormValues,
       }
     });
 
-    revalidatePath("/dashboard/transactions");
-    revalidatePath(`/dashboard/transactions/${id}`);
-    revalidatePath("/dashboard/customers");
-    revalidatePath("/dashboard/bonus");
-    revalidatePath("/dashboard/reports");
+    revalidatePath("/dashboard", "layout");
     return { success: true };
   } catch (error: any) {
     console.error("Failed to update transaction:", error);
