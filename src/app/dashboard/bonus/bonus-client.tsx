@@ -106,27 +106,27 @@ export function BonusClient({ bonusStatus, products }: { bonusStatus: any[], pro
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-4">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="relative w-full sm:max-w-sm">
           <IconSearch className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
             placeholder="Search customer..."
-            className="pl-8"
+            className="pl-8 w-full"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
 
-        <div className="flex bg-muted p-1 rounded-md">
+        <div className="flex bg-muted p-1 rounded-md w-full sm:w-auto">
           <button
-            className={`px-3 py-1.5 text-sm font-medium rounded-sm transition-all ${filterMode === "all" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            className={`flex-1 sm:flex-none px-3 py-1.5 text-sm font-medium rounded-sm transition-all ${filterMode === "all" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
             onClick={() => setFilterMode("all")}
           >
             All Customers
           </button>
           <button
-            className={`px-3 py-1.5 text-sm font-medium rounded-sm transition-all ${filterMode === "redeem" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            className={`flex-1 sm:flex-none px-3 py-1.5 text-sm font-medium rounded-sm transition-all ${filterMode === "redeem" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
             onClick={() => setFilterMode("redeem")}
           >
             Ready to Redeem

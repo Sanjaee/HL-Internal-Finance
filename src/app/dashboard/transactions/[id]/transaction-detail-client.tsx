@@ -16,6 +16,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { markTransactionLunas, deleteTransaction } from "@/actions/transaction-actions";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -27,6 +37,8 @@ export function TransactionDetailClient({ tx }: { tx: any }) {
   const [isLunasOpen, setIsLunasOpen] = useState(false);
   const [paymentDate, setPaymentDate] = useState<Date | undefined>(new Date());
   const [isLoading, setIsLoading] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   const router = useRouter();
 
@@ -44,35 +56,38 @@ export function TransactionDetailClient({ tx }: { tx: any }) {
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm("Are you sure you want to delete this transaction?")) return;
-    
+  const performDelete = async () => {
+    setIsDeleting(true);
     const res = await deleteTransaction(tx.id);
+    setIsDeleting(false);
+    
     if (res.success) {
       toast.success("Transaction deleted!");
+      setIsDeleteDialogOpen(false);
       router.push("/dashboard/transactions");
     } else {
       toast.error(res.error || "Failed to delete");
+      setIsDeleteDialogOpen(false);
     }
   };
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link href="/dashboard/transactions">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-start md:items-center gap-4">
+          <Link href="/dashboard/transactions" className="shrink-0">
             <Button variant="outline" size="icon">
               <IconArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Bon: {tx.bonNumber}</h1>
+          <div className="min-w-0">
+            <h1 className="text-2xl font-semibold tracking-tight break-words">Bon: {tx.bonNumber}</h1>
             <p className="text-sm text-muted-foreground">
               Created on {format(new Date(tx.transactionDate), "dd MMM yyyy")}
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {tx.status === "PIUTANG" && (
             <Button className="bg-green-600 hover:bg-green-700" onClick={() => setIsLunasOpen(true)}>
               <IconCheck className="mr-2 h-4 w-4" /> Mark as Lunas
@@ -81,8 +96,9 @@ export function TransactionDetailClient({ tx }: { tx: any }) {
           <Link href={`/dashboard/transactions/${tx.id}/edit`}>
             <Button variant="outline">Edit Bon</Button>
           </Link>
-          <Button variant="destructive" onClick={handleDelete}>
-            <IconTrash className="mr-2 h-4 w-4" /> Delete Bon
+          <Button variant="destructive" onClick={() => setIsDeleteDialogOpen(true)}>
+            <IconTrash className="mr-2 h-4 w-4" />
+            <span>Delete Bon</span>
           </Button>
         </div>
       </div>
@@ -231,6 +247,31 @@ export function TransactionDetailClient({ tx }: { tx: any }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will delete the transaction <strong>{tx.bonNumber}</strong>.
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                performDelete();
+              }}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
