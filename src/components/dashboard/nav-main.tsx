@@ -2,6 +2,7 @@
 
 import { type Icon } from "@tabler/icons-react"
 import { usePathname } from "next/navigation"
+import Link from "next/link"
 
 import {
   SidebarGroup,
