@@ -6,14 +6,16 @@ import { LoginForm } from "@/components/login-form"
 export default function LoginPage() {
   return (
     <div className="grid min-h-svh lg:grid-cols-2">
-      <div className="relative hidden lg:block h-full overflow-hidden">
-        <Image
-          src="/banner.png"
-          alt="HL Internal Finance"
-          fill
-          priority
-          className="object-cover"
-        />
+      <div className="relative hidden lg:flex flex-col items-center justify-center h-full bg-zinc-900 text-zinc-50 p-10 dark:bg-zinc-50 dark:text-zinc-900">
+        <div className="max-w-md text-center space-y-6">
+          <div className="mx-auto flex size-20 items-center justify-center rounded-2xl bg-zinc-800 dark:bg-zinc-200">
+            <GalleryVerticalEnd className="size-10" />
+          </div>
+          <h1 className="text-4xl font-extrabold tracking-tight">HL Internal Finance</h1>
+          <p className="text-lg text-zinc-400 dark:text-zinc-500">
+            Sistem admin mutakhir yang dirancang khusus untuk mengelola lebih dari <strong>50.000 data transaksi</strong> secara ringan, instan, dan tanpa lag.
+          </p>
+        </div>
       </div>
       <div className="flex flex-col gap-4 p-6 md:p-10">
         <div className="flex justify-center gap-2 md:justify-end">
