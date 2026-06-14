@@ -59,6 +59,7 @@ export async function getTransactionById(id: string) {
         customerId: transactions.customerId,
         customerName: customers.name,
         customerCode: customers.customerCode,
+        createdAt: transactions.createdAt,
       })
       .from(transactions)
       .leftJoin(customers, eq(transactions.customerId, customers.id))

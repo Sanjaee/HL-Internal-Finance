@@ -5,6 +5,15 @@ Silakan gunakan kredensial berikut untuk mencoba aplikasi:
 - **Username**: `admin`
 - **Password**: `admin123`
 
+**Catatan mengenai Seed Data:**
+Jika Anda ingin mengatur jumlah *seed data* sebanyak mungkin, Anda dapat mengubahnya di file `src/scripts/seed-dummy.ts`. Harap diingat bahwa untuk *deployment* (seperti di Vercel), batasan database biasanya hanya sanggup memproses sekitar 20.000 data transaksi dengan lancar. Namun, jika Anda menjalankannya di lingkungan lokal (*local environment*), sistem ini telah dioptimasi dan sanggup menangani pemrosesan hingga **100.000+ data transaksi** dengan mulus!
+
+## 0. General Rules
+- [x] AC-0.1 Seluruh nominal menggunakan mata uang Rupiah (IDR).
+- [x] AC-0.2 Sistem tidak menghitung maupun menampilkan pajak/PPN.
+
+---
+
 ## 1. Authentication
 - [x] AC-1.1 Aplikasi mewajibkan login sebelum fitur apa pun dapat diakses.
 - [x] AC-1.2 Hanya ada tepat satu akun pengguna; tidak ada alur pendaftaran mandiri (self-registration).
@@ -49,6 +58,7 @@ Silakan gunakan kredensial berikut untuk mencoba aplikasi:
 - [x] AC-4.10 Mengizinkan pengguna melihat, mengubah, dan menghapus transaksi.
   - [x] AC-4.10.1 Mengkalkulasi ulang omzet, profit, dan total secara otomatis ketika transaksi diubah.
 - [x] AC-4.11 Menampilkan nilai komputasi pada detail transaksi: omzet per baris, omzet transaksi (tanpa ongkir), ongkir, dan total tagihan (Amount Owed = Omzet + Ongkir).
+- [x] AC-4.12 Menyediakan field Deskripsi (teks bebas) pada transaksi yang dapat dibuat dan diubah.
 - [x] Perhitungan Validasi Transaksi:
   - Line omzet = harga diskon unit × qty
   - Transaction omzet = $\Sigma$ line omzet
@@ -90,6 +100,7 @@ Silakan gunakan kredensial berikut untuk mencoba aplikasi:
   - Menyediakan tombol "Lunas" pada detail satu transaksi (Bon).
   - Menampilkan modal konfirmasi tanggal pelunasan yang sama.
   - Mengubah status Bon tersebut menjadi "Lunas" dengan tanggal pelunasan terkait.
+  - [x] AC-6.6.1 Sistem menyimpan Tanggal Pelunasan pada transaksi yang berstatus Lunas.
 - [x] AC-6.7 Memastikan proses pelunasan langsung memperbarui angka totalan (Total Piutang ↓, Total sudah dibayar ↑, Omzet/Laba diakui ↑, Akumulasi omzet bonus customer ↑).
 - [x] AC-6.8 Memastikan transaksi yang sudah "Lunas" tidak dapat dilunasi kembali dan ditandai secara visual agar berbeda.
 - [x] AC-6.9 Menampilkan detail lengkap Bon (item baris, qty, harga, ongkir, omzet, status, tanggal pelunasan jika ada) saat transaksi di-klik.

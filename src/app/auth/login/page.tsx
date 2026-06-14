@@ -19,7 +19,7 @@ export default function LoginPage() {
             <p className="text-base text-zinc-400 dark:text-zinc-500 leading-relaxed text-justify">
               Mimpi buruk terbesar dalam mengelola keuangan adalah aplikasi yang mendadak macet, halaman <i>crash</i>, dan kursor yang tak bisa digerakkan akibat dipaksa menelan puluhan ribu baris data sekaligus.
               <br /><br />
-              Sistem ini mendobrak batasan tersebut. Ditenagai oleh <strong>Next.js Server Components</strong>, arsitektur <strong>TanStack Virtualization</strong>, <strong>Optimized Debouncing</strong>, serta manipulasi <i>cache</i> tingkat lanjut, aplikasi ini memotong beban memori secara drastis untuk memproses <strong>20.000+ data transaksi</strong> secara instan. Hasilnya? Beban operasional terberat pun berubah menjadi pengalaman yang mulus, secepat kilat, dan tanpa sedetik pun <i>lag</i>.
+              Sistem ini mendobrak batasan tersebut. Ditenagai oleh <strong>Next.js Server Components</strong>, arsitektur <strong>TanStack Virtualization</strong>, <strong>Optimized Debouncing</strong>, serta manipulasi <i>cache</i> tingkat lanjut, aplikasi ini memotong beban memori secara drastis untuk memproses <strong>100.000+ data transaksi</strong> secara instan. Hasilnya? Beban operasional terberat pun berubah menjadi pengalaman yang mulus, secepat kilat, dan tanpa sedetik pun <i>lag</i>.
             </p>
           </div>
         </div>

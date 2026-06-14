@@ -83,7 +83,7 @@ export function TransactionDetailClient({ tx }: { tx: any }) {
           <div className="min-w-0">
             <h1 className="text-2xl font-semibold tracking-tight break-words">Bon: {tx.bonNumber}</h1>
             <p className="text-sm text-muted-foreground">
-              Created on {format(new Date(tx.transactionDate), "dd MMM yyyy")}
+              Created on {format(new Date(tx.createdAt), "dd MMM yyyy, HH:mm")}
             </p>
           </div>
         </div>

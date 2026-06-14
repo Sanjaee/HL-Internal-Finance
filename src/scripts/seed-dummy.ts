@@ -38,17 +38,17 @@ async function main() {
 
 
 
-    // 1. Seed 20,000 Customers
-    console.log("Seeding 20,000 customers...");
+    // 1. Seed 5,000 Customers
+    console.log("Seeding 5,000 customers...");
     const insertedCustomers = [];
-    for (let chunk = 0; chunk < 20; chunk++) {
-      console.log(`Processing customers chunk ${chunk + 1} of 20...`);
+    for (let chunk = 0; chunk < 5; chunk++) {
+      console.log(`Processing customers chunk ${chunk + 1} of 5...`);
       const newCustomers = [];
       for (let i = 0; i < 1000; i++) {
         newCustomers.push({
           customerCode: `CUST-${faker.string.alphanumeric(4).toUpperCase()}-${chunk}${i}`,
           name: faker.person.fullName(),
-          bonusThreshold: faker.number.float({ min: 1000000, max: 10000000, fractionDigits: 2 }).toString(),
+          bonusThreshold: faker.number.float({ min: 1000000, max: 10000000, fractionDigits: 0 }).toString(),
           accumulatedBonusOmzet: "0",
           grantedBonusCount: 0,
           createdAt: new Date(),
@@ -59,17 +59,19 @@ async function main() {
       insertedCustomers.push(...insertedChunk);
     }
 
-    // 2. Seed 20,000 Products
-    console.log("Seeding 20,000 products...");
+    // 2. Seed 5,000 Products
+    console.log("Seeding 5,000 products...");
     const insertedProducts = [];
-    for (let chunk = 0; chunk < 20; chunk++) {
-      console.log(`Processing products chunk ${chunk + 1} of 20...`);
+    for (let chunk = 0; chunk < 5; chunk++) {
+      console.log(`Processing products chunk ${chunk + 1} of 5...`);
       const newProducts = [];
       for (let i = 0; i < 1000; i++) {
         const isLM = faker.datatype.boolean();
         const productType = (isLM ? "LM" : "BR") as "LM" | "BR";
-        const costPrice = faker.number.float({ min: 10000000, max: 300000000, fractionDigits: 0 });
-        const basePrice = costPrice * faker.number.float({ min: 1.1, max: 1.5 });
+        const costPrice = isLM 
+          ? faker.number.float({ min: 1000000, max: 20000000, fractionDigits: 0 }) 
+          : faker.number.float({ min: 50000, max: 2000000, fractionDigits: 0 });
+        const basePrice = Math.round(costPrice * faker.number.float({ min: 1.1, max: 1.5 }));
 
         newProducts.push({
           productCode: `PROD-${faker.string.alphanumeric(4).toUpperCase()}-${chunk}${i}`,
@@ -85,9 +87,9 @@ async function main() {
       insertedProducts.push(...insertedChunk);
     }
 
-    // 3. Seed 20,000 Transactions (Over the last 365 days)
-    console.log("Seeding 20,000 transactions...");
-    const TOTAL_TX = 20000;
+    // 3. Seed 10,000 Transactions (Over the last 365 days)
+    console.log("Seeding 10,000 transactions...");
+    const TOTAL_TX = 10000;
     const CHUNK_SIZE = 1000;
     const startDate = subDays(new Date(), 365);
 
@@ -139,8 +141,8 @@ async function main() {
           });
         }
 
-        const shippingCost = faker.number.float({ min: 0, max: 50000, fractionDigits: 2 });
-        const totalAmount = subtotalOmzet + shippingCost;
+        const shippingCost = faker.number.float({ min: 0, max: 50000, fractionDigits: 0 });
+        const totalAmount = Math.round(subtotalOmzet + shippingCost);
 
         txBatch.push({
           id: txId,
