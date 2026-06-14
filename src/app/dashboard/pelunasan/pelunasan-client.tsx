@@ -106,19 +106,19 @@ export function PelunasanClient({ customers }: { customers: any[] }) {
     },
     {
       accessorKey: "subtotalOmzet",
-      header: () => <div className="text-right">Omzet</div>,
-      cell: ({ row }) => <div className="text-right">Rp {Number(row.original.subtotalOmzet).toLocaleString("id-ID", { maximumFractionDigits: 0 })}</div>,
+      header: () => <div className="text-left">Omzet</div>,
+      cell: ({ row }) => <div className="text-left">Rp {Number(row.original.subtotalOmzet).toLocaleString("id-ID", { maximumFractionDigits: 0 })}</div>,
     },
     {
       accessorKey: "shippingCost",
-      header: () => <div className="text-right">Shipping</div>,
-      cell: ({ row }) => <div className="text-right">Rp {Number(row.original.shippingCost).toLocaleString("id-ID", { maximumFractionDigits: 0 })}</div>,
+      header: () => <div className="text-left">Shipping</div>,
+      cell: ({ row }) => <div className="text-left">Rp {Number(row.original.shippingCost).toLocaleString("id-ID", { maximumFractionDigits: 0 })}</div>,
     },
     {
       accessorKey: "totalAmount",
-      header: () => <div className="text-right">Total Amount</div>,
+      header: () => <div className="text-left">Total Amount</div>,
       cell: ({ row }) => (
-        <div className="text-right font-bold text-destructive">
+        <div className="text-left font-bold text-destructive">
           Rp {Number(row.original.totalAmount).toLocaleString("id-ID", { maximumFractionDigits: 0 })}
         </div>
       ),
@@ -157,9 +157,9 @@ export function PelunasanClient({ customers }: { customers: any[] }) {
     },
     {
       accessorKey: "totalAmount",
-      header: () => <div className="text-right">Amount</div>,
+      header: () => <div className="text-left">Amount</div>,
       cell: ({ row }) => (
-        <div className="text-right font-bold text-green-600">
+        <div className="text-left font-bold text-green-600">
           Rp {Number(row.original.totalAmount).toLocaleString("id-ID", { maximumFractionDigits: 0 })}
         </div>
       ),
