@@ -22,7 +22,6 @@ import {
 import Link from "next/link";
 import { format } from "date-fns";
 import { DataTable } from "@/components/ui/data-table";
-import { useQuery } from "@tanstack/react-query";
 
 const currencyFormatter = new Intl.NumberFormat("id-ID", {
   maximumFractionDigits: 0,
@@ -53,11 +52,7 @@ export function TransactionTable({
   const deferredSearch = useDeferredValue(searchQuery);
   const router = useRouter();
 
-  const { data: transactions, refetch } = useQuery({
-    queryKey: ["transactions"],
-    queryFn: async () => initialTransactions, // In a real app, this would fetch from an API
-    initialData: initialTransactions,
-  });
+  const transactions = initialTransactions;
 
   const filteredTransactions = useMemo(() => {
     const search = deferredSearch.toLowerCase();
@@ -80,7 +75,6 @@ export function TransactionTable({
     if (res.success) {
       toast.success("Transaction deleted successfully");
       router.refresh();
-      refetch();
     } else {
       toast.error(res.error || "Failed to delete transaction");
     }
