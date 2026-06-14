@@ -1,5 +1,10 @@
 # To-Do List Implementasi HL Sales & Receivables Management App
 
+### Demo Login
+Silakan gunakan kredensial berikut untuk mencoba aplikasi:
+- **Username**: `admin`
+- **Password**: `admin123`
+
 ## 1. Authentication
 - [x] AC-1.1 Aplikasi mewajibkan login sebelum fitur apa pun dapat diakses.
 - [x] AC-1.2 Hanya ada tepat satu akun pengguna; tidak ada alur pendaftaran mandiri (self-registration).
