@@ -51,7 +51,7 @@ export function DashboardCharts({
   const dataRight = filterData(timeRangeRight)
 
   return (
-    <div className="grid gap-6 md:grid-cols-2">
+    <div className="grid gap-6 grid-cols-1 xl:grid-cols-2">
       {/* LEFT CHART: Product Type */}
       <Card className="pt-0">
         <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">

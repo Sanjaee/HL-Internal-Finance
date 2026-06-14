@@ -182,7 +182,7 @@ export function PelunasanClient({ customers }: { customers: any[] }) {
 
       {isLoading || !data ? (
         <div className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-4">
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
             <Skeleton className="h-[120px] w-full" />
             <Skeleton className="h-[120px] w-full" />
             <Skeleton className="h-[120px] w-full" />
@@ -204,7 +204,7 @@ export function PelunasanClient({ customers }: { customers: any[] }) {
         </div>
       ) : (
         <>
-          <div className="grid gap-4 md:grid-cols-4">
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
             <Card>
               <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Total Receivables</CardTitle></CardHeader>
               <CardContent>
