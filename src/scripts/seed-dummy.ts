@@ -38,11 +38,11 @@ async function main() {
 
 
 
-    // 1. Seed 1,000 Customers
-    console.log("Seeding 1,000 customers...");
+    // 1. Seed 10,000 Customers
+    console.log("Seeding 10,000 customers...");
     const insertedCustomers = [];
-    for (let chunk = 0; chunk < 1; chunk++) {
-      console.log(`Processing customers chunk ${chunk + 1} of 1...`);
+    for (let chunk = 0; chunk < 10; chunk++) {
+      console.log(`Processing customers chunk ${chunk + 1} of 10...`);
       const newCustomers = [];
       for (let i = 0; i < 1000; i++) {
         newCustomers.push({
@@ -59,16 +59,16 @@ async function main() {
       insertedCustomers.push(...insertedChunk);
     }
 
-    // 2. Seed 1,000 Products
-    console.log("Seeding 1,000 products...");
+    // 2. Seed 10,000 Products
+    console.log("Seeding 10,000 products...");
     const insertedProducts = [];
-    for (let chunk = 0; chunk < 1; chunk++) {
-      console.log(`Processing products chunk ${chunk + 1} of 1...`);
+    for (let chunk = 0; chunk < 10; chunk++) {
+      console.log(`Processing products chunk ${chunk + 1} of 10...`);
       const newProducts = [];
       for (let i = 0; i < 1000; i++) {
         const isLM = faker.datatype.boolean();
         const productType = (isLM ? "LM" : "BR") as "LM" | "BR";
-        const costPrice = faker.number.float({ min: 10000, max: 500000, fractionDigits: 2 });
+        const costPrice = faker.number.float({ min: 10000000, max: 300000000, fractionDigits: 0 });
         const basePrice = costPrice * faker.number.float({ min: 1.1, max: 1.5 });
 
         newProducts.push({
@@ -85,9 +85,9 @@ async function main() {
       insertedProducts.push(...insertedChunk);
     }
 
-    // 3. Seed 1,000 Transactions (Over the last 365 days)
-    console.log("Seeding 1,000 transactions...");
-    const TOTAL_TX = 1000;
+    // 3. Seed 10,000 Transactions (Over the last 365 days)
+    console.log("Seeding 10,000 transactions...");
+    const TOTAL_TX = 10000;
     const CHUNK_SIZE = 1000;
     const startDate = subDays(new Date(), 365);
 

@@ -100,12 +100,63 @@ export function ReportsClient() {
     fetchReports();
   }, [month, year]);
 
-  const exportCustomerPDF = () => {
-    if (customerData.length === 0) return;
+  const exportFullPDF = () => {
+    if (!overallData || !productTypeData || customerData.length === 0) return;
     const doc = new jsPDF();
-    doc.text(`Customer Recap - ${format(new Date(Number(year), Number(month) - 1), "MMMM yyyy")}`, 14, 15);
     
-    const tableData = customerData.map((c: any) => [
+    // Main Header
+    doc.setFontSize(18);
+    doc.text("HL Internal Finance", 14, 15);
+    
+    // Sub Header
+    const title = `Recap & Reporting - ${format(new Date(Number(year), Number(month) - 1), "MMMM yyyy")}`;
+    doc.setFontSize(12);
+    doc.setTextColor(100);
+    doc.text(title, 14, 22);
+    doc.setTextColor(0); // Reset color to black
+    
+    // Overall Stats
+    doc.setFontSize(11);
+    doc.text("Overall Recap", 14, 32);
+    
+    autoTable(doc, {
+      startY: 37,
+      head: [["Metric", "Amount"]],
+      body: [
+        ["Total Piutang", `Rp ${overallData.totalPiutang.toLocaleString("id-ID", { maximumFractionDigits: 0 })}`],
+        ["Total Sudah Dibayar", `Rp ${overallData.totalDibayar.toLocaleString("id-ID", { maximumFractionDigits: 0 })}`],
+        ["Total Omzet", `Rp ${overallData.totalOmzet.toLocaleString("id-ID", { maximumFractionDigits: 0 })}`],
+        ["Omzet LM", `Rp ${overallData.totalOmzetLM.toLocaleString("id-ID", { maximumFractionDigits: 0 })}`],
+        ["Omzet BR", `Rp ${overallData.totalOmzetBR.toLocaleString("id-ID", { maximumFractionDigits: 0 })}`],
+        ["Total Laba HL", `Rp ${overallData.totalLaba.toLocaleString("id-ID", { maximumFractionDigits: 0 })}`],
+      ],
+      theme: "grid",
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [15, 23, 42] },
+    });
+
+    // Product Stats
+    const finalY1 = (doc as any).lastAutoTable.finalY || 30;
+    doc.text("Product Type Recap", 14, finalY1 + 10);
+    
+    autoTable(doc, {
+      startY: finalY1 + 15,
+      head: [["Type", "Items Sold", "Total Omzet", "Total Laba"]],
+      body: [
+        ["LM", productTypeData.LM.itemsSold, `Rp ${productTypeData.LM.totalOmzet.toLocaleString("id-ID", { maximumFractionDigits: 0 })}`, `Rp ${productTypeData.LM.totalLaba.toLocaleString("id-ID", { maximumFractionDigits: 0 })}`],
+        ["BR", productTypeData.BR.itemsSold, `Rp ${productTypeData.BR.totalOmzet.toLocaleString("id-ID", { maximumFractionDigits: 0 })}`, `Rp ${productTypeData.BR.totalLaba.toLocaleString("id-ID", { maximumFractionDigits: 0 })}`],
+      ],
+      theme: "grid",
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [15, 23, 42] },
+    });
+
+    // Customer Stats
+    const finalY2 = (doc as any).lastAutoTable.finalY || finalY1;
+    doc.text("Customer Recap", 14, finalY2 + 10);
+
+    const tableData = customerData.map((c: any, index: number) => [
+      index + 1,
       c.customerName,
       `Rp ${c.totalPiutang.toLocaleString("id-ID", { maximumFractionDigits: 0 })}`,
       `Rp ${c.totalDibayar.toLocaleString("id-ID", { maximumFractionDigits: 0 })}`,
@@ -116,19 +167,51 @@ export function ReportsClient() {
     ]);
 
     autoTable(doc, {
-      startY: 25,
-      head: [["Customer", "Piutang", "Dibayar", "Omzet LM", "Omzet BR", "Total Omzet", "Laba HL"]],
+      startY: finalY2 + 15,
+      head: [["No.", "Customer", "Piutang", "Dibayar", "Omzet LM", "Omzet BR", "Total Omzet", "Laba HL"]],
       body: tableData,
       theme: "grid",
-      styles: { fontSize: 8 },
+      styles: { 
+        fontSize: 8,
+        valign: 'middle'
+      },
       headStyles: { fillColor: [15, 23, 42] },
+      columnStyles: { 0: { halign: 'center', cellWidth: 10 } }, // Make the No. column narrower and centered
+      didParseCell: (data) => {
+        // Apply dynamic font size only to the body and only to currency columns (index > 1)
+        if (data.section === 'body' && data.column.index > 1) {
+          const text = data.cell.text[0] || "";
+          const textLength = text.length;
+          
+          // Shrink font size as number gets larger to prevent wrapping
+          if (textLength >= 16) {
+            data.cell.styles.fontSize = 5;
+          } else if (textLength >= 14) {
+            data.cell.styles.fontSize = 6;
+          } else if (textLength >= 12) {
+            data.cell.styles.fontSize = 7;
+          }
+        }
+      }
     });
 
-    doc.save(`Customer_Recap_${month}_${year}.pdf`);
+    doc.save(`Recap_Report_${month}_${year}.pdf`);
   };
 
   return (
     <div className="flex flex-col gap-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Recap & Reporting</h1>
+          <p className="text-sm text-muted-foreground">
+            View financial recaps overall, per customer, and per product type.
+          </p>
+        </div>
+        <Button onClick={exportFullPDF} className="w-full sm:w-auto" disabled={isLoading || !overallData}>
+          <IconDownload className="mr-2 h-4 w-4" /> Export Report (PDF)
+        </Button>
+      </div>
+
       <Tabs defaultValue="overall" className="space-y-4">
         <div className="flex flex-col-reverse sm:flex-row items-start sm:items-center justify-between gap-4">
           <TabsList>
@@ -210,9 +293,6 @@ export function ReportsClient() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Customer Recap</CardTitle>
-              <Button variant="outline" size="sm" onClick={exportCustomerPDF}>
-                <IconDownload className="mr-2 h-4 w-4" /> Export PDF
-              </Button>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="relative max-w-sm">
