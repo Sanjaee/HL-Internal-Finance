@@ -250,7 +250,7 @@ export async function markTransactionLunas(id: string, paymentDate: Date) {
       // Update the transaction
       await tx.update(transactions).set({
         status: "LUNAS",
-        paymentDate: paymentDate.toISOString().split("T")[0],
+        paymentDate: paymentDate,
         updatedAt: new Date(),
       }).where(eq(transactions.id, id));
 

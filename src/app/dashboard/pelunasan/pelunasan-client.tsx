@@ -88,7 +88,7 @@ export function PelunasanClient({ customers }: { customers: any[] }) {
   const piutangColumns = useMemo<ColumnDef<any>[]>(() => [
     {
       accessorKey: "bonNumber",
-      header: "No Bon",
+      header: "Bon Number",
       cell: ({ row }) => (
         <Link href={`/dashboard/transactions/${row.original.id}`} className="hover:underline text-primary font-medium">
           {row.original.bonNumber}
@@ -97,7 +97,7 @@ export function PelunasanClient({ customers }: { customers: any[] }) {
     },
     {
       accessorKey: "transactionDate",
-      header: "Tanggal",
+      header: "Date",
       cell: ({ row }) => format(new Date(row.original.transactionDate), "dd/MM/yy"),
     },
     {
@@ -111,12 +111,12 @@ export function PelunasanClient({ customers }: { customers: any[] }) {
     },
     {
       accessorKey: "shippingCost",
-      header: "Ongkir",
+      header: "Shipping",
       cell: ({ row }) => `Rp ${Number(row.original.shippingCost).toLocaleString("id-ID", { maximumFractionDigits: 0 })}`,
     },
     {
       accessorKey: "totalAmount",
-      header: "Total Tagihan",
+      header: "Total Amount",
       cell: ({ row }) => (
         <span className="font-bold text-destructive">
           Rp {Number(row.original.totalAmount).toLocaleString("id-ID", { maximumFractionDigits: 0 })}
@@ -125,7 +125,7 @@ export function PelunasanClient({ customers }: { customers: any[] }) {
     },
     {
       id: "actions",
-      header: () => <div className="text-center">Aksi</div>,
+      header: () => <div className="text-center">Action</div>,
       cell: ({ row }) => (
         <div className="flex justify-center">
           <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => openSettleModal(row.original)}>
@@ -139,12 +139,12 @@ export function PelunasanClient({ customers }: { customers: any[] }) {
   const riwayatColumns = useMemo<ColumnDef<any>[]>(() => [
     {
       accessorKey: "paymentDate",
-      header: "Tgl Bayar",
-      cell: ({ row }) => format(new Date(row.original.paymentDate), "dd MMM yyyy"),
+      header: "Payment Date",
+      cell: ({ row }) => format(new Date(row.original.paymentDate), "dd MMM yyyy, HH:mm"),
     },
     {
       accessorKey: "bonNumber",
-      header: "No Bon",
+      header: "Bon Number",
       cell: ({ row }) => (
         <Link href={`/dashboard/transactions/${row.original.id}`} className="hover:underline text-primary font-medium">
           {row.original.bonNumber}
@@ -157,7 +157,7 @@ export function PelunasanClient({ customers }: { customers: any[] }) {
     },
     {
       accessorKey: "totalAmount",
-      header: "Nilai",
+      header: "Amount",
       cell: ({ row }) => (
         <div className="text-right font-bold text-green-600">
           Rp {Number(row.original.totalAmount).toLocaleString("id-ID", { maximumFractionDigits: 0 })}
@@ -201,7 +201,7 @@ export function PelunasanClient({ customers }: { customers: any[] }) {
         <>
           <div className="grid gap-4 md:grid-cols-4">
             <Card>
-              <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Total Piutang</CardTitle></CardHeader>
+              <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Total Receivables</CardTitle></CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-destructive">
                   Rp {data.summary.totalPiutang.toLocaleString("id-ID", { maximumFractionDigits: 0 })}
@@ -209,15 +209,15 @@ export function PelunasanClient({ customers }: { customers: any[] }) {
               </CardContent>
             </Card>
             <Card>
-              <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Bon Belum Lunas</CardTitle></CardHeader>
+              <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Unpaid Bon</CardTitle></CardHeader>
               <CardContent><div className="text-2xl font-bold">{data.summary.jumlahBonBelumLunas}</div></CardContent>
             </Card>
             <Card>
-              <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Customer Menunggak</CardTitle></CardHeader>
+              <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Customers in Arrears</CardTitle></CardHeader>
               <CardContent><div className="text-2xl font-bold">{data.summary.totalCustomerMenunggak}</div></CardContent>
             </Card>
             <Card>
-              <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Pelunasan Bulan Ini</CardTitle></CardHeader>
+              <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Pelunasan This Month</CardTitle></CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-green-600">
                   Rp {data.summary.nilaiPelunasanBulanIni.toLocaleString("id-ID", { maximumFractionDigits: 0 })}
@@ -240,8 +240,8 @@ export function PelunasanClient({ customers }: { customers: any[] }) {
               </div>
 
               <TabsList className="grid w-full grid-cols-2 max-w-[400px]">
-                <TabsTrigger value="piutang">Piutang Aktif</TabsTrigger>
-                <TabsTrigger value="riwayat">Riwayat Pelunasan</TabsTrigger>
+                <TabsTrigger value="piutang">Active Receivables</TabsTrigger>
+                <TabsTrigger value="riwayat">Pelunasan History</TabsTrigger>
               </TabsList>
             </div>
 
@@ -260,48 +260,73 @@ export function PelunasanClient({ customers }: { customers: any[] }) {
       <Dialog open={settleModalOpen} onOpenChange={setSettleModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Konfirmasi Pelunasan</DialogTitle>
+            <DialogTitle>Confirm Pelunasan</DialogTitle>
             <DialogDescription>
-              Ubah status bon {selectedBon?.bonNumber} menjadi LUNAS.
+              Change the status of Bon {selectedBon?.bonNumber} to LUNAS.
             </DialogDescription>
           </DialogHeader>
           {selectedBon && (
             <div className="py-4 space-y-4">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div><span className="text-muted-foreground">Customer:</span><br/>{selectedBon.customerName}</div>
-                <div><span className="text-muted-foreground">Total Tagihan:</span><br/><span className="font-bold text-lg">Rp {Number(selectedBon.totalAmount).toLocaleString("id-ID", { maximumFractionDigits: 0 })}</span></div>
+                <div><span className="text-muted-foreground">Total Amount:</span><br/><span className="font-bold text-lg">Rp {Number(selectedBon.totalAmount).toLocaleString("id-ID", { maximumFractionDigits: 0 })}</span></div>
               </div>
-              <div className="flex flex-col">
-                <label className="text-sm font-medium mb-1 block">Tanggal Pelunasan *</label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !paymentDate && "text-muted-foreground"
-                      )}
-                    >
-                      <IconCalendar className="mr-2 h-4 w-4" />
-                      {paymentDate ? format(paymentDate, "PPP") : <span>Pick a date</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={paymentDate}
-                      onSelect={setPaymentDate}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1">
+                  <label className="text-sm font-medium mb-1 block">Pelunasan Date *</label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !paymentDate && "text-muted-foreground"
+                        )}
+                      >
+                        <IconCalendar className="mr-2 h-4 w-4" />
+                        {paymentDate ? format(paymentDate, "PPP") : <span>Pick a date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={paymentDate}
+                        onSelect={(date) => {
+                          if (date && paymentDate) {
+                            date.setHours(paymentDate.getHours(), paymentDate.getMinutes(), 0, 0);
+                          }
+                          setPaymentDate(date)
+                        }}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div className="w-full sm:w-32">
+                  <label className="text-sm font-medium mb-1 block">Time *</label>
+                  <Input
+                    type="time"
+                    step="60"
+                    value={paymentDate ? format(paymentDate, "HH:mm") : "00:00"}
+                    onChange={(e) => {
+                      const timeStr = e.target.value;
+                      if (paymentDate && timeStr) {
+                        const [hours, minutes] = timeStr.split(':');
+                        const newDate = new Date(paymentDate);
+                        newDate.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+                        setPaymentDate(newDate);
+                      }
+                    }}
+                    className="appearance-none bg-background [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+                  />
+                </div>
               </div>
             </div>
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setSettleModalOpen(false)} disabled={isSettling}>Cancel</Button>
             <Button className="bg-green-600 hover:bg-green-700" onClick={handleSettle} disabled={isSettling}>
-              {isSettling ? "Processing..." : "Konfirmasi Lunas"}
+              {isSettling ? "Processing..." : "Confirm Pelunasan"}
             </Button>
           </DialogFooter>
         </DialogContent>

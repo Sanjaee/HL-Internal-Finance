@@ -104,7 +104,7 @@ export async function bulkSettleMonth(customerId: string, month: number, year: n
         // Mark as LUNAS
         await tx.update(transactions).set({
           status: "LUNAS",
-          paymentDate: paymentDate.toISOString().split("T")[0],
+          paymentDate: paymentDate,
           updatedAt: new Date(),
         }).where(eq(transactions.id, t.id));
 

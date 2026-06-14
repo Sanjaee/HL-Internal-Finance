@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1781429110373,
+      "tag": "0000_update_payment_date_to_timestamp",
+      "breakpoints": true
+    }
+  ]
+}

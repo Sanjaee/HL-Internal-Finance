@@ -2,6 +2,7 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
@@ -146,7 +147,7 @@ export function TransactionDetailClient({ tx }: { tx: any }) {
             {tx.paymentDate && (
               <div className="flex justify-between border-t pt-2 mt-2">
                 <span className="text-muted-foreground">Payment Date</span>
-                <span className="font-medium">{format(new Date(tx.paymentDate), "dd MMM yyyy")}</span>
+                <span className="font-medium">{format(new Date(tx.paymentDate), "dd MMM yyyy, HH:mm")}</span>
               </div>
             )}
           </CardContent>
@@ -201,7 +202,7 @@ export function TransactionDetailClient({ tx }: { tx: any }) {
               <span className="font-semibold">Rp {Number(tx.shippingCost).toLocaleString("id-ID", { maximumFractionDigits: 0 })}</span>
             </div>
             <div className="flex justify-between w-full md:w-1/3 border-t pt-2">
-              <span className="text-lg font-bold">Total Tagihan:</span>
+              <span className="text-lg font-bold">Total Amount:</span>
               <span className="text-xl font-bold text-primary">Rp {Number(tx.totalAmount).toLocaleString("id-ID", { maximumFractionDigits: 0 })}</span>
             </div>
           </div>
@@ -217,29 +218,56 @@ export function TransactionDetailClient({ tx }: { tx: any }) {
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <label className="text-sm font-medium mb-2 block">Payment Date</label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={"outline"}
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !paymentDate && "text-muted-foreground"
-                  )}
-                >
-                  <IconCalendar className="mr-2 h-4 w-4" />
-                  {paymentDate ? format(paymentDate, "PPP") : <span>Pick a date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={paymentDate}
-                  onSelect={setPaymentDate}
-                  initialFocus
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1">
+                <label className="text-sm font-medium mb-2 block">Date</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !paymentDate && "text-muted-foreground"
+                      )}
+                    >
+                      <IconCalendar className="mr-2 h-4 w-4" />
+                      {paymentDate ? format(paymentDate, "PPP") : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={paymentDate}
+                      onSelect={(date) => {
+                         if (date && paymentDate) {
+                           date.setHours(paymentDate.getHours(), paymentDate.getMinutes(), 0, 0);
+                         }
+                         setPaymentDate(date)
+                      }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="w-full sm:w-32">
+                <label className="text-sm font-medium mb-2 block">Time</label>
+                <Input
+                  type="time"
+                  step="60"
+                  value={paymentDate ? format(paymentDate, "HH:mm") : "00:00"}
+                  onChange={(e) => {
+                    const timeStr = e.target.value;
+                    if (paymentDate && timeStr) {
+                      const [hours, minutes] = timeStr.split(':');
+                      const newDate = new Date(paymentDate);
+                      newDate.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+                      setPaymentDate(newDate);
+                    }
+                  }}
+                  className="appearance-none bg-background [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
                 />
-              </PopoverContent>
-            </Popover>
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsLunasOpen(false)} disabled={isLoading}>Cancel</Button>

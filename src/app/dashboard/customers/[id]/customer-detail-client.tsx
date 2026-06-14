@@ -144,7 +144,7 @@ export function CustomerDetailClient({ customer }: { customer: any }) {
           <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Total Piutang</CardTitle>
+                <CardTitle className="text-sm font-medium">Total Receivables</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-xl font-bold text-destructive">
@@ -154,7 +154,7 @@ export function CustomerDetailClient({ customer }: { customer: any }) {
             </Card>
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Sudah Dibayar</CardTitle>
+                <CardTitle className="text-sm font-medium">Already Paid</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-xl font-bold text-green-600">
@@ -164,7 +164,7 @@ export function CustomerDetailClient({ customer }: { customer: any }) {
             </Card>
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Omzet LM</CardTitle>
+                <CardTitle className="text-sm font-medium">LM Omzet</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-xl font-bold text-amber-600">
@@ -174,7 +174,7 @@ export function CustomerDetailClient({ customer }: { customer: any }) {
             </Card>
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Omzet BR</CardTitle>
+                <CardTitle className="text-sm font-medium">BR Omzet</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-xl font-bold text-blue-600">
@@ -184,7 +184,7 @@ export function CustomerDetailClient({ customer }: { customer: any }) {
             </Card>
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Omzet Total</CardTitle>
+                <CardTitle className="text-sm font-medium">Total Omzet</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-xl font-bold">
@@ -194,7 +194,7 @@ export function CustomerDetailClient({ customer }: { customer: any }) {
             </Card>
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Laba HL</CardTitle>
+                <CardTitle className="text-sm font-medium">HL Profit</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-xl font-bold text-primary">
@@ -213,7 +213,7 @@ export function CustomerDetailClient({ customer }: { customer: any }) {
                 </Button>
                 {hasUnpaid && (
                   <Button className="bg-green-600 hover:bg-green-700" onClick={() => setIsSettleModalOpen(true)}>
-                    <IconChecklist className="mr-2 h-4 w-4" /> Sudah Lunas (1 Bulan)
+                    <IconChecklist className="mr-2 h-4 w-4" /> Bulk Lunas (1 Month)
                   </Button>
                 )}
               </div>
@@ -226,7 +226,7 @@ export function CustomerDetailClient({ customer }: { customer: any }) {
                     <TableHead>Bon Number</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Omzet</TableHead>
-                    <TableHead className="text-right">Total Tagihan</TableHead>
+                    <TableHead className="text-right">Total Amount</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -271,29 +271,56 @@ export function CustomerDetailClient({ customer }: { customer: any }) {
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <label className="text-sm font-medium mb-2 block">Payment Date</label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={"outline"}
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !paymentDate && "text-muted-foreground"
-                  )}
-                >
-                  <IconCalendar className="mr-2 h-4 w-4" />
-                  {paymentDate ? format(paymentDate, "PPP") : <span>Pick a date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={paymentDate}
-                  onSelect={setPaymentDate}
-                  initialFocus
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1">
+                <label className="text-sm font-medium mb-2 block">Date</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !paymentDate && "text-muted-foreground"
+                      )}
+                    >
+                      <IconCalendar className="mr-2 h-4 w-4" />
+                      {paymentDate ? format(paymentDate, "PPP") : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={paymentDate}
+                      onSelect={(date) => {
+                        if (date && paymentDate) {
+                          date.setHours(paymentDate.getHours(), paymentDate.getMinutes(), 0, 0);
+                        }
+                        setPaymentDate(date)
+                      }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="w-full sm:w-32">
+                <label className="text-sm font-medium mb-2 block">Time</label>
+                <Input
+                  type="time"
+                  step="60"
+                  value={paymentDate ? format(paymentDate, "HH:mm") : "00:00"}
+                  onChange={(e) => {
+                    const timeStr = e.target.value;
+                    if (paymentDate && timeStr) {
+                      const [hours, minutes] = timeStr.split(':');
+                      const newDate = new Date(paymentDate);
+                      newDate.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+                      setPaymentDate(newDate);
+                    }
+                  }}
+                  className="appearance-none bg-background [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
                 />
-              </PopoverContent>
-            </Popover>
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsSettleModalOpen(false)} disabled={isSettling}>Cancel</Button>

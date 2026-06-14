@@ -96,7 +96,7 @@ export const transactions = pgTable("transactions", {
     .notNull()
     .references(() => customers.id),
   transactionDate: date("transaction_date").notNull(),
-  paymentDate: date("payment_date"),
+  paymentDate: timestamp("payment_date"),
   description: text("description"),
   shippingCost: decimal("shipping_cost", { precision: 18, scale: 2 }).default("0"),
   isBonusTransaction: boolean("is_bonus_transaction").default(false),
