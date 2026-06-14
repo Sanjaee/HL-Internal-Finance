@@ -17,7 +17,7 @@ export default function LoginPage() {
               Performa Tanpa Batas. Kendali Penuh di Tangan Anda.
             </p>
             <p className="text-base text-zinc-400 dark:text-zinc-500 leading-relaxed">
-              Tinggalkan rasa frustrasi menghadapi <i>loading</i> yang tak berkesudahan. Sistem mutakhir ini dirancang khusus untuk menelan <strong>50.000+ data transaksi</strong> secepat kilat—mengubah beban operasional terberat Anda menjadi pengalaman yang instan, responsif, dan tanpa kompromi.
+              Tinggalkan rasa frustrasi menghadapi <i>loading</i> yang tak berkesudahan. Sistem mutakhir ini dirancang khusus untuk menelan <strong>30.000+ data transaksi</strong> secepat kilat—mengubah beban operasional terberat Anda menjadi pengalaman yang instan, responsif, dan tanpa kompromi.
             </p>
           </div>
         </div>
