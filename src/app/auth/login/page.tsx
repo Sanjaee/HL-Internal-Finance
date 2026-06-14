@@ -12,12 +12,14 @@ export default function LoginPage() {
             <GalleryVerticalEnd className="size-10" />
           </div>
           <h1 className="text-4xl font-extrabold tracking-tight">HL Internal Finance</h1>
-          <div className="space-y-4">
-            <p className="text-lg font-medium text-zinc-300 dark:text-zinc-700">
-              Performa Tanpa Batas. Kendali Penuh di Tangan Anda.
+          <div className="space-y-4 text-left">
+            <p className="text-lg font-medium text-zinc-300 dark:text-zinc-700 text-center">
+              Performa Ekstrem. Selamat Tinggal <i>Browser Freeze</i>.
             </p>
-            <p className="text-base text-zinc-400 dark:text-zinc-500 leading-relaxed">
-              Tinggalkan rasa frustrasi menghadapi <i>loading</i> yang tak berkesudahan. Sistem mutakhir ini dirancang khusus untuk menelan <strong>20.000+ data transaksi</strong> secepat kilat—mengubah beban operasional terberat Anda menjadi pengalaman yang instan, responsif, dan tanpa kompromi.
+            <p className="text-base text-zinc-400 dark:text-zinc-500 leading-relaxed text-justify">
+              Mimpi buruk terbesar dalam mengelola keuangan adalah aplikasi yang mendadak macet, halaman <i>crash</i>, dan kursor yang tak bisa digerakkan akibat dipaksa menelan puluhan ribu baris data sekaligus.
+              <br /><br />
+              Sistem ini mendobrak batasan tersebut. Ditenagai oleh <strong>Next.js Server Components</strong>, arsitektur <strong>TanStack Virtualization</strong>, <strong>Optimized Debouncing</strong>, serta manipulasi <i>cache</i> tingkat lanjut, aplikasi ini memotong beban memori secara drastis untuk memproses <strong>20.000+ data transaksi</strong> secara instan. Hasilnya? Beban operasional terberat pun berubah menjadi pengalaman yang mulus, secepat kilat, dan tanpa sedetik pun <i>lag</i>.
             </p>
           </div>
         </div>
