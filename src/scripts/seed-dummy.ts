@@ -149,7 +149,7 @@ async function main() {
           bonNumber: `BON-${faker.string.alphanumeric(4).toUpperCase()}-${chunk}${i}`,
           customerId: customer.id,
           transactionDate: transactionDate.toISOString().split("T")[0],
-          paymentDate: faker.datatype.boolean() ? addDays(transactionDate, faker.number.int({ min: 1, max: 5 })).toISOString().split("T")[0] : null,
+          paymentDate: faker.datatype.boolean() ? addDays(transactionDate, faker.number.int({ min: 1, max: 5 })) : null,
           description: faker.lorem.sentence(),
           shippingCost: shippingCost.toString(),
           status: faker.helpers.arrayElement(["PIUTANG", "LUNAS"]),
