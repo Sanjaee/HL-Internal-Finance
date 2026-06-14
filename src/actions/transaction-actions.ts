@@ -231,6 +231,9 @@ export async function createTransaction(data: TransactionFormValues, userId?: st
       }).where(eq(transactions.id, newTx.id));
     });
     revalidatePath("/dashboard/transactions");
+    revalidatePath("/dashboard/bonus");
+    revalidatePath("/dashboard/reports");
+    revalidatePath("/dashboard/customers");
     return { success: true };
   } catch (error: any) {
     console.error("Failed to create transaction:", error);
@@ -265,6 +268,8 @@ export async function markTransactionLunas(id: string, paymentDate: Date) {
     revalidatePath("/dashboard/transactions");
     revalidatePath(`/dashboard/transactions/${id}`);
     revalidatePath("/dashboard/customers");
+    revalidatePath("/dashboard/bonus");
+    revalidatePath("/dashboard/reports");
     return { success: true };
   } catch (error: any) {
     console.error("Failed to mark transaction as LUNAS:", error);
@@ -278,6 +283,13 @@ export async function deleteTransaction(id: string) {
     // but schema doesn't have isDeleted on transactions. We will Hard Delete or soft if we add it.
     // Let's hard delete since it's allowed.
     await db.transaction(async (tx) => {
+      const [oldTx] = await tx.select().from(transactions).where(eq(transactions.id, id));
+      if (oldTx && oldTx.status === "LUNAS" && !oldTx.isBonusTransaction) {
+        await tx.execute(
+          sql`UPDATE ${customers} SET accumulated_bonus_omzet = accumulated_bonus_omzet - ${Number(oldTx.subtotalOmzet)} WHERE id = ${oldTx.customerId}`
+        );
+      }
+
       const items = await tx.select({ id: transactionItems.id }).from(transactionItems).where(eq(transactionItems.transactionId, id));
       const itemIds = items.map(i => i.id);
       
@@ -292,6 +304,9 @@ export async function deleteTransaction(id: string) {
     });
 
     revalidatePath("/dashboard/transactions");
+    revalidatePath("/dashboard/customers");
+    revalidatePath("/dashboard/bonus");
+    revalidatePath("/dashboard/reports");
     return { success: true };
   } catch (error: any) {
     console.error("Failed to delete transaction:", error);
@@ -454,6 +469,8 @@ export async function updateTransaction(id: string, data: TransactionFormValues,
     revalidatePath("/dashboard/transactions");
     revalidatePath(`/dashboard/transactions/${id}`);
     revalidatePath("/dashboard/customers");
+    revalidatePath("/dashboard/bonus");
+    revalidatePath("/dashboard/reports");
     return { success: true };
   } catch (error: any) {
     console.error("Failed to update transaction:", error);
