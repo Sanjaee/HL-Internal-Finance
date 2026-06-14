@@ -28,11 +28,10 @@ export function LoginForm({
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
 
   async function handleLogin(formData: FormData) {
-    const username = formData.get("username") as string;
-    const password = formData.get("password") as string;
-
     try {
       setError(null);
       const result = await signIn("credentials", {
@@ -72,7 +71,14 @@ export function LoginForm({
         
         <div className="grid gap-2">
           <Label htmlFor="username">Username</Label>
-          <Input id="username" name="username" placeholder="admin" required />
+          <Input 
+            id="username" 
+            name="username" 
+            placeholder="admin" 
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required 
+          />
         </div>
         
         <div className="grid gap-2">
@@ -84,6 +90,8 @@ export function LoginForm({
               id="password" 
               name="password" 
               type={showPassword ? "text" : "password"} 
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               required 
             />
             <Button
