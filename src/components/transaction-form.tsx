@@ -135,6 +135,7 @@ export function TransactionForm({
       if (onSuccess) {
         onSuccess();
       } else {
+        router.refresh();
         if (transactionId) {
           router.push(`/dashboard/transactions/${transactionId}`);
         } else {

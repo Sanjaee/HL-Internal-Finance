@@ -241,10 +241,14 @@ export async function createTransaction(data: TransactionFormValues, userId?: st
 
       // 6. Update Transaction Totals
       const totalAmount = totalSubtotalOmzet + shippingCost;
+      const isAutoLunas = totalAmount === 0;
+
       await tx.update(transactions).set({
         subtotalOmzet: String(totalSubtotalOmzet),
         totalAmount: String(totalAmount),
         totalProfit: String(totalProfit),
+        status: isAutoLunas ? "LUNAS" : "PIUTANG",
+        paymentDate: isAutoLunas ? transactionDate : null,
       }).where(eq(transactions.id, newTx.id));
 
       // 7. Process Bonus Ledger if applicable
@@ -483,6 +487,8 @@ export async function updateTransaction(id: string, data: TransactionFormValues,
 
       // 6. Update Header
       const totalAmount = totalSubtotalOmzet + shippingCost;
+      const isAutoLunas = totalAmount === 0;
+
       await tx.update(transactions).set({
         bonNumber,
         customerId,
@@ -493,6 +499,8 @@ export async function updateTransaction(id: string, data: TransactionFormValues,
         subtotalOmzet: String(totalSubtotalOmzet),
         totalAmount: String(totalAmount),
         totalProfit: String(totalProfit),
+        status: isAutoLunas ? "LUNAS" : "PIUTANG",
+        paymentDate: isAutoLunas ? transactionDate : null,
         updatedBy: userId,
         updatedAt: new Date(),
       }).where(eq(transactions.id, id));
