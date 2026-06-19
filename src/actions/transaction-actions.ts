@@ -279,8 +279,11 @@ export async function deleteTransaction(id: string) {
     await db.transaction(async (tx) => {
       const [oldTx] = await tx.select().from(transactions).where(eq(transactions.id, id));
       if (!oldTx) throw new Error("Transaction not found");
-      if (oldTx.status === "LUNAS") {
-        throw new Error("Cannot delete a transaction that is already LUNAS.");
+      // Revert omzet if it was LUNAS and not a bonus transaction
+      if (oldTx.status === "LUNAS" && !oldTx.isBonusTransaction) {
+        await tx.execute(
+          sql`UPDATE ${customers} SET accumulated_bonus_omzet = accumulated_bonus_omzet - ${Number(oldTx.subtotalOmzet)} WHERE id = ${oldTx.customerId}`
+        );
       }
 
       const items = await tx.select({ id: transactionItems.id }).from(transactionItems).where(eq(transactionItems.transactionId, id));
