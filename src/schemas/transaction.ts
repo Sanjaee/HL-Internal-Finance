@@ -14,7 +14,16 @@ export const transactionSchema = z.object({
   description: z.string().optional(),
   shippingCost: z.coerce.number().min(0, "Shipping cost cannot be negative").default(0),
   isBonusTransaction: z.boolean().default(false),
+  bonusCountToConsume: z.coerce.number().min(0).default(0),
   items: z.array(transactionItemSchema).min(1, "At least one product is required"),
+}).superRefine((data, ctx) => {
+  if (data.isBonusTransaction && data.bonusCountToConsume < 1) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["bonusCountToConsume"],
+      message: "At least 1 bonus must be consumed for a bonus transaction",
+    });
+  }
 });
 
 export type TransactionFormValues = z.infer<typeof transactionSchema>;

@@ -62,6 +62,7 @@ export function TransactionForm({
       description: "",
       shippingCost: 0,
       isBonusTransaction: false,
+      bonusCountToConsume: 0,
       items: [{ productId: "", quantity: 1 }],
     },
   });
@@ -86,6 +87,17 @@ export function TransactionForm({
   const isBonusTransaction = watchedValues.isBonusTransaction;
   const shippingCost = watchedValues.shippingCost;
   const watchedItems = watchedValues.items || [];
+
+  const selectedCustomer = customers.find(c => c.id === selectedCustomerId);
+  let availableBonuses = 0;
+  if (selectedCustomer) {
+    const threshold = Number(selectedCustomer.bonusThreshold);
+    const accumulated = Number(selectedCustomer.accumulatedBonusOmzet);
+    const granted = selectedCustomer.grantedBonusCount || 0;
+    if (threshold > 0) {
+      availableBonuses = Math.floor(accumulated / threshold) - granted;
+    }
+  }
 
   // Calculate totals
   let subtotalOmzet = 0;
@@ -280,7 +292,14 @@ export function TransactionForm({
               render={({ field }) => (
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 md:col-span-2 bg-muted/50">
                   <div className="space-y-0.5">
-                    <FormLabel className="text-base">Bonus Transaction</FormLabel>
+                    <FormLabel className="text-base flex items-center gap-2">
+                      Bonus Transaction
+                      {selectedCustomer && availableBonuses > 0 && (
+                        <Badge className="bg-green-600 hover:bg-green-700">
+                          {availableBonuses} Bonus Tersedia
+                        </Badge>
+                      )}
+                    </FormLabel>
                     <div className="text-sm text-muted-foreground">
                       Mark this bon as a bonus redemption. Items will be free (0 Omzet).
                     </div>
@@ -288,12 +307,45 @@ export function TransactionForm({
                   <FormControl>
                     <Switch
                       checked={field.value}
-                      onCheckedChange={field.onChange}
+                      onCheckedChange={(val) => {
+                        field.onChange(val);
+                        if (val && availableBonuses > 0) {
+                          form.setValue("bonusCountToConsume", 1, { shouldValidate: true });
+                        } else if (!val) {
+                          form.setValue("bonusCountToConsume", 0, { shouldValidate: true });
+                        }
+                      }}
                     />
                   </FormControl>
                 </FormItem>
               )}
             />
+
+            {isBonusTransaction && (
+              <FormField
+                control={form.control}
+                name="bonusCountToConsume"
+                render={({ field }) => (
+                  <FormItem className="md:col-span-2">
+                    <FormLabel>Jumlah Kuota Bonus yang Dipakai</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min={1} 
+                        max={availableBonuses > 0 ? availableBonuses : undefined} 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                    {availableBonuses <= 0 && (
+                      <p className="text-sm text-destructive mt-1">
+                        Warning: Customer ini belum memiliki kuota bonus yang tersedia!
+                      </p>
+                    )}
+                  </FormItem>
+                )}
+              />
+            )}
           </CardContent>
         </Card>
 

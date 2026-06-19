@@ -98,7 +98,7 @@ export async function createTransaction(data: TransactionFormValues, userId?: st
       return { success: false, error: "Invalid data", details: validation.error.flatten() };
     }
 
-    const { customerId, transactionDate, items, shippingCost, isBonusTransaction, description } = validation.data;
+    const { customerId, transactionDate, items, shippingCost, isBonusTransaction, bonusCountToConsume, description } = validation.data;
     const bonNumber = validation.data.bonNumber || `INV-${Date.now().toString().slice(-6)}`;
 
     // Check unique Bon
@@ -109,6 +109,21 @@ export async function createTransaction(data: TransactionFormValues, userId?: st
 
     // Process in transaction
     await db.transaction(async (tx) => {
+      // 0. Fetch Customer
+      const [customer] = await tx.select().from(customers).where(eq(customers.id, customerId));
+      if (!customer) throw new Error("Customer not found");
+
+      if (isBonusTransaction) {
+        const threshold = Number(customer.bonusThreshold);
+        const accumulated = Number(customer.accumulatedBonusOmzet || 0);
+        const granted = customer.grantedBonusCount || 0;
+        const available = threshold > 0 ? Math.floor(accumulated / threshold) - granted : 0;
+        const toConsume = bonusCountToConsume || 0;
+
+        if (toConsume < 1) throw new Error("Must consume at least 1 bonus");
+        if (toConsume > available) throw new Error(`Cannot consume ${toConsume} bonuses. Only ${available} available.`);
+      }
+
       // 1. Fetch Customer Discount Groups
       const discountGroups = await tx
         .select()
@@ -231,6 +246,28 @@ export async function createTransaction(data: TransactionFormValues, userId?: st
         totalAmount: String(totalAmount),
         totalProfit: String(totalProfit),
       }).where(eq(transactions.id, newTx.id));
+
+      // 7. Process Bonus Ledger if applicable
+      if (isBonusTransaction && bonusCountToConsume && bonusCountToConsume > 0) {
+        const threshold = Number(customer.bonusThreshold);
+        const accumulated = Number(customer.accumulatedBonusOmzet || 0);
+        const granted = customer.grantedBonusCount || 0;
+        const consumedAmount = bonusCountToConsume * threshold;
+
+        await tx.insert(bonusRedemptions).values({
+          customerId,
+          transactionId: newTx.id,
+          bonusCount: bonusCountToConsume,
+          thresholdAmount: String(threshold),
+          consumedAmount: String(consumedAmount),
+          remainingAmount: String(accumulated - consumedAmount),
+        });
+
+        await tx.update(customers).set({
+          grantedBonusCount: granted + bonusCountToConsume,
+          accumulatedBonusOmzet: String(accumulated - consumedAmount),
+        }).where(eq(customers.id, customerId));
+      }
     });
     revalidatePath("/dashboard", "layout");
     return { success: true };
@@ -325,7 +362,7 @@ export async function updateTransaction(id: string, data: TransactionFormValues,
       return { success: false, error: "Invalid data", details: validation.error.flatten() };
     }
 
-    const { customerId, transactionDate, items, shippingCost, isBonusTransaction, description } = validation.data;
+    const { customerId, transactionDate, items, shippingCost, isBonusTransaction, bonusCountToConsume, description } = validation.data;
     const bonNumber = validation.data.bonNumber || `INV-${Date.now().toString().slice(-6)}`;
 
     // Check unique Bon, exclude current
