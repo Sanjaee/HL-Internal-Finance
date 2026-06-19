@@ -15,7 +15,6 @@ export async function getCustomers() {
     const allCustomers = await db
       .select()
       .from(customers)
-      .where(eq(customers.isDeleted, false))
       .orderBy(desc(customers.createdAt));
     return { success: true, data: allCustomers };
   } catch (error) {

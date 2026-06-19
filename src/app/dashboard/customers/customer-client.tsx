@@ -51,7 +51,7 @@ export function CustomerClient({ customers }: { customers: any[] }) {
         customers={customers} 
         onEdit={handleOpenEdit} 
         headerActions={
-          <Button onClick={handleOpenCreate}>
+          <Button onClick={handleOpenCreate} className="w-full sm:w-auto">
             <IconPlus className="mr-2 h-4 w-4" /> Add Customer
           </Button>
         }
