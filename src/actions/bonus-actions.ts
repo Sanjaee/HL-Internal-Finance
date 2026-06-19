@@ -30,14 +30,14 @@ export async function getBonusStatus() {
       const threshold = Number(c.bonusThreshold);
       const granted = c.grantedBonusCount || 0;
 
-      const totalEarned = threshold > 0 ? Math.floor(accOmzet / threshold) : 0;
-      const available = Math.max(0, totalEarned - granted);
+      const totalEarnedAllTime = granted + (threshold > 0 ? Math.floor(accOmzet / threshold) : 0);
+      const available = threshold > 0 ? Math.floor(accOmzet / threshold) : 0;
       const currentCycleProgress = threshold > 0 ? accOmzet % threshold : 0;
       const progressPercent = threshold > 0 ? Math.min(100, (currentCycleProgress / threshold) * 100) : 0;
 
       return {
         ...c,
-        totalEarned,
+        totalEarned: totalEarnedAllTime, // For display if needed
         available,
         currentCycleProgress,
         progressPercent,
@@ -69,7 +69,7 @@ export async function redeemBonus(data: {
       const threshold = Number(customer.bonusThreshold);
       const granted = customer.grantedBonusCount || 0;
       const totalEarned = threshold > 0 ? Math.floor(accOmzet / threshold) : 0;
-      const available = Math.max(0, totalEarned - granted);
+      const available = totalEarned;
 
       if (data.bonusCountToConsume > available) {
         throw new Error(`Cannot consume ${data.bonusCountToConsume} bonuses. Only ${available} available.`);
@@ -125,12 +125,13 @@ export async function redeemBonus(data: {
         bonusCount: data.bonusCountToConsume,
         thresholdAmount: String(threshold),
         consumedAmount: String(consumedAmount),
-        remainingAmount: String(accOmzet - ((granted + data.bonusCountToConsume) * threshold)),
+        remainingAmount: String(accOmzet - consumedAmount),
       });
 
-      // 5. Update Customer's Granted Count
+      // 5. Update Customer's Granted Count and Reduce Accumulated Omzet
       await tx.update(customers).set({
         grantedBonusCount: granted + data.bonusCountToConsume,
+        accumulatedBonusOmzet: String(accOmzet - consumedAmount),
       }).where(eq(customers.id, data.customerId));
 
     });

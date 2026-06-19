@@ -286,6 +286,16 @@ export async function deleteTransaction(id: string) {
         );
       }
 
+      // Revert bonus redemption if it was a bonus transaction
+      if (oldTx.isBonusTransaction) {
+        const [redemption] = await tx.select().from(bonusRedemptions).where(eq(bonusRedemptions.transactionId, id));
+        if (redemption) {
+          await tx.execute(
+            sql`UPDATE ${customers} SET accumulated_bonus_omzet = accumulated_bonus_omzet + ${Number(redemption.consumedAmount)}, granted_bonus_count = granted_bonus_count - ${Number(redemption.bonusCount)} WHERE id = ${oldTx.customerId}`
+          );
+        }
+      }
+
       const items = await tx.select({ id: transactionItems.id }).from(transactionItems).where(eq(transactionItems.transactionId, id));
       const itemIds = items.map(i => i.id);
       
