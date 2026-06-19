@@ -17,7 +17,6 @@ export async function getProducts() {
     const productList = await db
       .select()
       .from(products)
-      .where(eq(products.isDeleted, false))
       .orderBy(desc(products.createdAt));
 
     return { success: true, data: productList };

@@ -13,6 +13,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { CurrencyInput } from "@/components/ui/currency-input";
 
 import { createTransaction, updateTransaction } from "@/actions/transaction-actions";
@@ -374,7 +375,14 @@ export function TransactionForm({
 
                   {/* Preview calculated values */}
                   <div className="col-span-6 md:col-span-4 space-y-1">
-                    <div className="text-xs text-muted-foreground">Price (after {discountStr})</div>
+                    <div className="text-xs text-muted-foreground flex items-center gap-1">
+                      {product && (
+                        <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 leading-none">
+                          {product.productType}
+                        </Badge>
+                      )}
+                      <span>Price (after {discountStr})</span>
+                    </div>
                     <div className="font-medium">Rp {unitPrice.toLocaleString("id-ID", { maximumFractionDigits: 0 })}</div>
                     <div className="text-xs text-muted-foreground pt-1">Line Omzet</div>
                     <div className="font-bold text-primary">Rp {lineOmzet.toLocaleString("id-ID", { maximumFractionDigits: 0 })}</div>

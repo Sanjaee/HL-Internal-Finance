@@ -13,6 +13,7 @@ export async function getOverallRecap(month: number, year: number) {
         totalAmount: transactions.totalAmount,
         subtotalOmzet: transactions.subtotalOmzet,
         totalProfit: transactions.totalProfit,
+        isBonusTransaction: transactions.isBonusTransaction,
       })
       .from(transactions)
       .where(
@@ -50,15 +51,17 @@ export async function getOverallRecap(month: number, year: number) {
         totalPiutang += Number(tx.totalAmount);
       } else if (tx.status === "LUNAS") {
         totalDibayar += Number(tx.totalAmount);
-        totalOmzet += Number(tx.subtotalOmzet);
         totalLaba += Number(tx.totalProfit);
 
-        const items = itemsMap[tx.id] || [];
-        for (const item of items) {
-          if (item.productType === "LM") {
-            totalOmzetLM += Number(item.lineOmzet);
-          } else if (item.productType === "BR") {
-            totalOmzetBR += Number(item.lineOmzet);
+        if (!tx.isBonusTransaction) {
+          totalOmzet += Number(tx.subtotalOmzet);
+          const items = itemsMap[tx.id] || [];
+          for (const item of items) {
+            if (item.productType === "LM") {
+              totalOmzetLM += Number(item.lineOmzet);
+            } else if (item.productType === "BR") {
+              totalOmzetBR += Number(item.lineOmzet);
+            }
           }
         }
       }
@@ -92,6 +95,7 @@ export async function getCustomerRecap(month: number, year: number) {
         totalAmount: transactions.totalAmount,
         subtotalOmzet: transactions.subtotalOmzet,
         totalProfit: transactions.totalProfit,
+        isBonusTransaction: transactions.isBonusTransaction,
       })
       .from(transactions)
       .leftJoin(customers, eq(transactions.customerId, customers.id))
@@ -139,15 +143,17 @@ export async function getCustomerRecap(month: number, year: number) {
         stats.totalPiutang += Number(tx.totalAmount);
       } else if (tx.status === "LUNAS") {
         stats.totalDibayar += Number(tx.totalAmount);
-        stats.totalOmzet += Number(tx.subtotalOmzet);
         stats.totalLaba += Number(tx.totalProfit);
 
-        const items = itemsMap[tx.id] || [];
-        for (const item of items) {
-          if (item.productType === "LM") {
-            stats.totalOmzetLM += Number(item.lineOmzet);
-          } else if (item.productType === "BR") {
-            stats.totalOmzetBR += Number(item.lineOmzet);
+        if (!tx.isBonusTransaction) {
+          stats.totalOmzet += Number(tx.subtotalOmzet);
+          const items = itemsMap[tx.id] || [];
+          for (const item of items) {
+            if (item.productType === "LM") {
+              stats.totalOmzetLM += Number(item.lineOmzet);
+            } else if (item.productType === "BR") {
+              stats.totalOmzetBR += Number(item.lineOmzet);
+            }
           }
         }
       }
@@ -169,6 +175,7 @@ export async function getProductTypeRecap(month: number, year: number) {
       .select({
         id: transactions.id,
         status: transactions.status,
+        isBonusTransaction: transactions.isBonusTransaction,
       })
       .from(transactions)
       .where(
@@ -206,9 +213,11 @@ export async function getProductTypeRecap(month: number, year: number) {
         for (const item of items) {
           if (item.productType === "LM" || item.productType === "BR") {
             const pt = item.productType as "LM" | "BR";
-            typeStats[pt].totalOmzet += Number(item.lineOmzet);
-            typeStats[pt].totalLaba += Number(item.lineProfit);
-            typeStats[pt].itemsSold += Number(item.quantity);
+            if (!tx.isBonusTransaction) {
+              typeStats[pt].totalOmzet += Number(item.lineOmzet);
+              typeStats[pt].itemsSold += Number(item.quantity);
+            }
+            typeStats[pt].totalLaba += Number(item.lineProfit); // Laba remains (usually negative expense)
           }
         }
       }

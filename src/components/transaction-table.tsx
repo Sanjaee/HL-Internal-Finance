@@ -4,6 +4,7 @@ import { useMemo, useState, useDeferredValue } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { IconEye, IconTrash, IconSearch } from "@tabler/icons-react";
 import { deleteTransaction } from "@/actions/transaction-actions";
 import { toast } from "sonner";
@@ -95,7 +96,16 @@ export function TransactionTable({
       {
         accessorKey: "bonNumber",
         header: "Bon Number",
-        cell: ({ row }) => <span className="font-medium">{row.original.bonNumber}</span>,
+        cell: ({ row }) => (
+          <div className="flex items-center gap-2">
+            <span className="font-medium">{row.original.bonNumber}</span>
+            {row.original.isBonusTransaction && (
+              <Badge variant="outline" className="bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-100 text-[10px] px-1.5 py-0 h-4 leading-none">
+                BONUS
+              </Badge>
+            )}
+          </div>
+        ),
       },
       {
         accessorKey: "customerName",
@@ -142,22 +152,35 @@ export function TransactionTable({
           const t = row.original;
           return (
             <div className="flex justify-end gap-2">
-              <Link href={`/dashboard/transactions/${t.id}`}>
-                <Button variant="outline" size="icon">
-                  <IconEye className="h-4 w-4" />
-                </Button>
-              </Link>
-              <Button
-                variant="destructive"
-                size="icon"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setTransactionToDelete(t);
-                }}
-                disabled={isDeleting === t.id}
-              >
-                <IconTrash className="h-4 w-4" />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link href={`/dashboard/transactions/${t.id}`}>
+                    <Button variant="outline" size="icon">
+                      <IconEye className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent>View Details</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span tabIndex={0}>
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setTransactionToDelete(t);
+                      }}
+                      disabled={isDeleting === t.id}
+                      className={isDeleting === t.id ? "pointer-events-none" : ""}
+                    >
+                      <IconTrash className="h-4 w-4" />
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>Delete Bon</TooltipContent>
+              </Tooltip>
             </div>
           );
         },

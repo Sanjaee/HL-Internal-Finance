@@ -4,11 +4,13 @@ import { useMemo, useState, useDeferredValue } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { IconEdit, IconTrash, IconSearch } from "@tabler/icons-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { IconEye, IconEdit, IconTrash, IconSearch } from "@tabler/icons-react";
 import { deleteCustomer } from "@/actions/customer-actions";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
+import Link from "next/link";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -120,28 +122,50 @@ export function CustomerTable({
           const customer = row.original;
           return (
             <div className="flex justify-end gap-2">
-              <Button 
-                variant="outline" 
-                size="icon" 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit(customer);
-                }}
-                disabled={customer.isDeleted}
-              >
-                <IconEdit className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="destructive"
-                size="icon"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setCustomerToDelete(customer);
-                }}
-                disabled={isDeleting === customer.id || customer.isDeleted}
-              >
-                <IconTrash className="h-4 w-4" />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link href={`/dashboard/customers/${customer.id}`}>
+                    <Button variant="outline" size="icon">
+                      <IconEye className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent>View Customer Details</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span tabIndex={0}>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => onEdit?.(customer)}
+                      disabled={customer.isDeleted}
+                      className={customer.isDeleted ? "pointer-events-none" : ""}
+                    >
+                      <IconEdit className="h-4 w-4" />
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>Edit Customer</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span tabIndex={0}>
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      onClick={() => {
+                        setCustomerToDelete(customer);
+                      }}
+                      disabled={isDeleting === customer.id || customer.isDeleted}
+                      className={(isDeleting === customer.id || customer.isDeleted) ? "pointer-events-none" : ""}
+                    >
+                      <IconTrash className="h-4 w-4" />
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>Delete Customer</TooltipContent>
+              </Tooltip>
             </div>
           );
         },

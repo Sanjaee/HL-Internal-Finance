@@ -45,15 +45,17 @@ export async function getCustomerMonthlyReport(customerId: string, month: number
         totalPiutang += Number(tx.totalAmount);
       } else if (tx.status === "LUNAS") {
         totalDibayar += Number(tx.totalAmount);
-        totalOmzet += Number(tx.subtotalOmzet);
         totalLaba += Number(tx.totalProfit);
 
-        const items = itemsMap[tx.id] || [];
-        for (const item of items) {
-          if (item.productType === "LM") {
-            totalOmzetLM += Number(item.lineOmzet);
-          } else if (item.productType === "BR") {
-            totalOmzetBR += Number(item.lineOmzet);
+        if (!tx.isBonusTransaction) {
+          totalOmzet += Number(tx.subtotalOmzet);
+          const items = itemsMap[tx.id] || [];
+          for (const item of items) {
+            if (item.productType === "LM") {
+              totalOmzetLM += Number(item.lineOmzet);
+            } else if (item.productType === "BR") {
+              totalOmzetBR += Number(item.lineOmzet);
+            }
           }
         }
       }
@@ -128,6 +130,83 @@ export async function bulkSettleMonth(customerId: string, month: number, year: n
     return { success: true };
   } catch (error: any) {
     console.error("Failed to bulk settle:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function getCustomerOutstandingPiutang(customerId: string) {
+  try {
+    const txList = await db
+      .select()
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.customerId, customerId),
+          eq(transactions.status, "PIUTANG")
+        )
+      )
+      .orderBy(transactions.transactionDate);
+
+    let totalPiutang = 0;
+    for (const tx of txList) {
+      totalPiutang += Number(tx.totalAmount);
+    }
+
+    return {
+      success: true,
+      data: {
+        transactions: txList,
+        totalPiutang,
+      }
+    };
+  } catch (error: any) {
+    console.error("Failed to fetch outstanding piutang:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function bulkSettleAllPiutang(customerId: string, paymentDate: Date) {
+  try {
+    await db.transaction(async (tx) => {
+      const unpaidTx = await tx
+        .select()
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.customerId, customerId),
+            eq(transactions.status, "PIUTANG")
+          )
+        );
+
+      if (unpaidTx.length === 0) return;
+
+      let totalAddedOmzet = 0;
+
+      for (const t of unpaidTx) {
+        await tx.update(transactions).set({
+          status: "LUNAS",
+          paymentDate: paymentDate,
+          updatedAt: new Date(),
+        }).where(eq(transactions.id, t.id));
+
+        if (!t.isBonusTransaction) {
+          totalAddedOmzet += Number(t.subtotalOmzet);
+        }
+      }
+
+      if (totalAddedOmzet > 0) {
+        await tx.execute(
+          sql`UPDATE ${customers} SET accumulated_bonus_omzet = accumulated_bonus_omzet + ${totalAddedOmzet} WHERE id = ${customerId}`
+        );
+      }
+    });
+
+    revalidatePath("/dashboard");
+    revalidatePath(`/dashboard/customers/${customerId}`);
+    revalidatePath("/dashboard/transactions");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Failed to bulk settle all:", error);
     return { success: false, error: error.message };
   }
 }
