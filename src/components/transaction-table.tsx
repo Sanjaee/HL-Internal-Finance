@@ -68,12 +68,17 @@ export function TransactionTable({
     if (!transactionToDelete) return;
     
     setIsDeleting(transactionToDelete.id);
+    const deletedBonIsBonus = transactionToDelete.isBonusTransaction;
     const res = await deleteTransaction(transactionToDelete.id);
     setIsDeleting(null);
     setTransactionToDelete(null);
     
     if (res.success) {
-      toast.success("Transaction deleted successfully");
+      if (deletedBonIsBonus) {
+        toast.success("Transaksi dihapus. Kuota bonus berhasil dikembalikan (refund).");
+      } else {
+        toast.success("Transaction deleted successfully");
+      }
       router.refresh();
     } else {
       toast.error(res.error || "Failed to delete transaction");

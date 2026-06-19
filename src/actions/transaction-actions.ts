@@ -28,6 +28,7 @@ export async function getTransactions() {
         subtotalOmzet: transactions.subtotalOmzet,
         shippingCost: transactions.shippingCost,
         totalAmount: transactions.totalAmount,
+        isBonusTransaction: transactions.isBonusTransaction,
         customerName: customers.name,
       })
       .from(transactions)
