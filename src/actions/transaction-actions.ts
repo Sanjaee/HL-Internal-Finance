@@ -117,7 +117,7 @@ export async function createTransaction(data: TransactionFormValues, userId?: st
         const threshold = Number(customer.bonusThreshold);
         const accumulated = Number(customer.accumulatedBonusOmzet || 0);
         const granted = customer.grantedBonusCount || 0;
-        const available = threshold > 0 ? Math.floor(accumulated / threshold) - granted : 0;
+        const available = threshold > 0 ? Math.floor(accumulated / threshold) : 0;
         const toConsume = bonusCountToConsume || 0;
 
         if (toConsume < 1) throw new Error("Must consume at least 1 bonus");
@@ -381,6 +381,22 @@ export async function updateTransaction(id: string, data: TransactionFormValues,
       if (!oldTx) throw new Error("Transaction not found");
       if (oldTx.status === "LUNAS") {
         throw new Error("Cannot edit a transaction that is already LUNAS.");
+      }
+
+      if (oldTx.isBonusTransaction !== isBonusTransaction) {
+        throw new Error("Tipe transaksi (Bonus / Regular) tidak dapat diubah setelah dibuat. Silakan hapus dan buat ulang.");
+      }
+
+      if (isBonusTransaction && oldTx.customerId !== customerId) {
+        throw new Error("Customer tidak dapat diubah pada transaksi Bonus. Silakan hapus dan buat ulang.");
+      }
+
+      if (isBonusTransaction) {
+        const [oldRedemption] = await tx.select().from(bonusRedemptions).where(eq(bonusRedemptions.transactionId, id));
+        const oldConsume = oldRedemption ? Number(oldRedemption.bonusCount) : 0;
+        if (oldConsume !== (bonusCountToConsume || 0)) {
+           throw new Error("Jumlah bonus yang digunakan tidak dapat diubah setelah transaksi dibuat. Silakan hapus dan buat ulang.");
+        }
       }
 
       // 1. Fetch Customer Discount Groups
