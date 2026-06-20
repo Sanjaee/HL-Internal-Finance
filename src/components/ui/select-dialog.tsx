@@ -152,7 +152,7 @@ export const SelectDialog: React.FC<SelectDialogProps> = ({
                         <button
                           type="button"
                           className={cn(
-                            "w-full text-left px-3 py-2 rounded-md text-sm transition-colors hover:bg-accent hover:text-accent-foreground flex items-center justify-between",
+                            "w-full cursor-pointer text-left px-3 py-2 rounded-md text-sm transition-colors hover:bg-accent hover:text-accent-foreground flex items-center justify-between",
                             (selectedValue?.toString() === option.id?.toString() ||
                               selectedValue?.toString() === option.code?.toString()) &&
                               "bg-accent text-accent-foreground"
