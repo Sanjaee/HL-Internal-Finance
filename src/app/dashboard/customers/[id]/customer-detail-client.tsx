@@ -148,40 +148,41 @@ export function CustomerDetailClient({ customer }: { customer: any }) {
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full md:w-auto">
-          <TabsList className="w-full grid grid-cols-2 sm:inline-flex sm:w-auto sm:grid-cols-none">
-            <TabsTrigger value="outstanding">Outstanding Piutang</TabsTrigger>
-            <TabsTrigger value="history">Monthly History</TabsTrigger>
-          </TabsList>
+      </div>
 
-          {activeTab === "history" && (
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <Select value={month} onValueChange={setMonth}>
-                <SelectTrigger className="w-full sm:w-[120px]">
-                  <SelectValue placeholder="Month" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Array.from({length: 12}).map((_, i) => (
-                    <SelectItem key={i+1} value={(i+1).toString()}>
-                      {format(new Date(2000, i, 1), "MMMM")}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full">
+        <TabsList className="grid w-full grid-cols-2 max-w-[400px]">
+          <TabsTrigger value="outstanding">Outstanding Piutang</TabsTrigger>
+          <TabsTrigger value="history">Monthly History</TabsTrigger>
+        </TabsList>
 
-              <Select value={year} onValueChange={setYear}>
-                <SelectTrigger className="w-full sm:w-[100px]">
-                  <SelectValue placeholder="Year" />
-                </SelectTrigger>
-                <SelectContent>
-                  {years.map((y) => (
-                    <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-        </div>
+        {activeTab === "history" && (
+          <div className="flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+            <Select value={month} onValueChange={setMonth}>
+              <SelectTrigger className="w-full sm:w-[120px]">
+                <SelectValue placeholder="Month" />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({length: 12}).map((_, i) => (
+                  <SelectItem key={i+1} value={(i+1).toString()}>
+                    {format(new Date(2000, i, 1), "MMMM")}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={year} onValueChange={setYear}>
+              <SelectTrigger className="w-full sm:w-[100px]">
+                <SelectValue placeholder="Year" />
+              </SelectTrigger>
+              <SelectContent>
+                {years.map((y) => (
+                  <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
 
       <TabsContent value="outstanding" className="space-y-6 mt-0">

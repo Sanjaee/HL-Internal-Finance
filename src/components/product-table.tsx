@@ -21,6 +21,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { DataTable } from "@/components/ui/data-table";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const currencyFormatter = new Intl.NumberFormat("id-ID", {
   maximumFractionDigits: 0,
@@ -202,26 +203,13 @@ export function ProductTable({
         </div>
         
         <div className="flex flex-col sm:flex-row sm:items-center gap-4 w-full sm:w-auto">
-          <div className="flex bg-muted p-1 rounded-md w-full sm:w-auto">
-            <button
-              className={`flex-1 sm:flex-none px-2 sm:px-6 py-1.5 text-sm font-medium rounded-sm transition-all ${filterMode === "active" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-              onClick={() => setFilterMode("active")}
-            >
-              Active
-            </button>
-            <button
-              className={`flex-1 sm:flex-none px-2 sm:px-6 py-1.5 text-sm font-medium rounded-sm transition-all ${filterMode === "inactive" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-              onClick={() => setFilterMode("inactive")}
-            >
-              Inactive
-            </button>
-            <button
-              className={`flex-1 sm:flex-none px-2 sm:px-6 py-1.5 text-sm font-medium rounded-sm transition-all ${filterMode === "all" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-              onClick={() => setFilterMode("all")}
-            >
-              All
-            </button>
-          </div>
+          <Tabs value={filterMode} onValueChange={(v) => setFilterMode(v as any)} className="w-full sm:w-[400px]">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="active">Active</TabsTrigger>
+              <TabsTrigger value="inactive">Inactive</TabsTrigger>
+              <TabsTrigger value="all">All</TabsTrigger>
+            </TabsList>
+          </Tabs>
 
           {headerActions && <div className="w-full sm:w-auto flex">{headerActions}</div>}
         </div>

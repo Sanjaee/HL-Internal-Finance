@@ -10,6 +10,7 @@ import { BonusRedeemModal } from "./bonus-redeem-modal";
 import { Input } from "@/components/ui/input";
 import { DataTable } from "@/components/ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export function BonusClient({ bonusStatus, products }: { bonusStatus: any[], products: any[] }) {
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
@@ -118,20 +119,12 @@ export function BonusClient({ bonusStatus, products }: { bonusStatus: any[], pro
           />
         </div>
 
-        <div className="flex bg-muted p-1 rounded-md w-full sm:w-auto">
-          <button
-            className={`flex-1 sm:flex-none px-3 py-1.5 text-sm font-medium rounded-sm transition-all ${filterMode === "all" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-            onClick={() => setFilterMode("all")}
-          >
-            All Customers
-          </button>
-          <button
-            className={`flex-1 sm:flex-none px-3 py-1.5 text-sm font-medium rounded-sm transition-all ${filterMode === "redeem" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-            onClick={() => setFilterMode("redeem")}
-          >
-            Ready to Redeem
-          </button>
-        </div>
+        <Tabs value={filterMode} onValueChange={(v) => setFilterMode(v as any)} className="w-full sm:w-[400px]">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="all">All Customers</TabsTrigger>
+            <TabsTrigger value="redeem">Ready to Redeem</TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
 
       <DataTable columns={columns} data={filteredBonusStatus} />
